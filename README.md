@@ -367,5 +367,3 @@ RJI_Persuratan/
 │   └── package.json
 │
 └── .gitignore
-
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJ1c2VySWQiOjEsInJvbGVJZCI6MSwiaWF0IjoxNzg4MTM4MjExLCJleHAiOjE3ODgyMjQ2MTF9RpVxe6zkEZXZ-oaKRxMAyjWXBasPOAbrqm3PmDG1nlo

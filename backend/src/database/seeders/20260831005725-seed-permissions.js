@@ -79,6 +79,16 @@ module.exports = {
       },
 
       {
+        name: "verification.create",
+        description: "Membuat data verifikasi surat.",
+      },
+      
+      {
+        name: "verification.revoke",
+        description: "Mencabut verifikasi surat.",
+      },
+
+      {
         name: "audit.view",
         description: "Melihat riwayat aktivitas sistem.",
       },
