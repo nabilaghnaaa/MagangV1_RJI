@@ -14,17 +14,21 @@ const permissionMiddleware = require(
 
 const router = express.Router();
 
-router.use(authMiddleware);
-
 router.get(
   "/",
-  permissionMiddleware("settings.view"),
+  authMiddleware,
+  permissionMiddleware(
+    "settings.view"
+  ),
   organizationController.get
 );
 
 router.put(
   "/",
-  permissionMiddleware("settings.update"),
+  authMiddleware,
+  permissionMiddleware(
+    "settings.update"
+  ),
   organizationController.update
 );
 

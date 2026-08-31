@@ -1,9 +1,21 @@
 import api from "./api";
 
+const create = async (data) => {
+  const response = await api.post(
+    "/invitations",
+    data
+  );
+
+  return response.data;
+};
+
 const getAll = async (params = {}) => {
-  const response = await api.get("/invitations", {
-    params,
-  });
+  const response = await api.get(
+    "/invitations",
+    {
+      params,
+    }
+  );
 
   return response.data;
 };
@@ -16,7 +28,10 @@ const getById = async (id) => {
   return response.data;
 };
 
-const update = async (id, data) => {
+const update = async (
+  id,
+  data
+) => {
   const response = await api.put(
     `/invitations/${id}`,
     data
@@ -25,7 +40,10 @@ const update = async (id, data) => {
   return response.data;
 };
 
-const review = async (id, data = {}) => {
+const review = async (
+  id,
+  data = {}
+) => {
   const response = await api.patch(
     `/invitations/${id}/review`,
     data
@@ -34,7 +52,9 @@ const review = async (id, data = {}) => {
   return response.data;
 };
 
-const approve = async (id) => {
+const approve = async (
+  id
+) => {
   const response = await api.patch(
     `/invitations/${id}/approve`
   );
@@ -49,7 +69,8 @@ const reject = async (
   const response = await api.patch(
     `/invitations/${id}/reject`,
     {
-      rejection_reason: rejectionReason,
+      rejection_reason:
+        rejectionReason,
     }
   );
 
@@ -57,6 +78,7 @@ const reject = async (
 };
 
 export default {
+  create,
   getAll,
   getById,
   update,

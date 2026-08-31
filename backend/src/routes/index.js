@@ -7,31 +7,62 @@ const suratRoutes = require("./suratRoutes");
 const templateRoutes = require("./templateRoutes");
 const verificationRoutes = require("./verificationRoutes");
 const signatureRoutes = require("./signatureRoutes");
-
-const authMiddleware = require("../middlewares/authMiddleware");
-const permissionMiddleware = require("../middlewares/permissionMiddleware");
 const templatePreviewRoutes = require("./templatePreviewRoutes");
 const organizationRoutes = require("./organizationRoutes");
 
+const authMiddleware = require(
+  "../middlewares/authMiddleware"
+);
+
+const permissionMiddleware = require(
+  "../middlewares/permissionMiddleware"
+);
+
 const router = express.Router();
 
-router.use("/auth", authRoutes);
+router.use(
+  "/auth",
+  authRoutes
+);
 
-router.use("/invitations", invitationRoutes);
+router.use(
+  "/invitations",
+  invitationRoutes
+);
 
-router.use("/assignments", assignmentRoutes);
+router.use(
+  "/assignments",
+  assignmentRoutes
+);
 
-router.use("/surat", suratRoutes);
+router.use(
+  "/surat",
+  suratRoutes
+);
 
-router.use("/templates", templateRoutes);
+router.use(
+  "/templates",
+  templateRoutes
+);
 
-router.use("/verification", verificationRoutes);
+router.use(
+  "/verification",
+  verificationRoutes
+);
 
-router.use("/signature", signatureRoutes);
+router.use(
+  "/signature",
+  signatureRoutes
+);
 
 router.use(
   "/template-preview",
   templatePreviewRoutes
+);
+
+router.use(
+  "/organization",
+  organizationRoutes
 );
 
 router.get(
@@ -40,7 +71,8 @@ router.get(
   (req, res) => {
     return res.status(200).json({
       success: true,
-      message: "Protected route berhasil diakses.",
+      message:
+        "Protected route berhasil diakses.",
       user: {
         id: req.user.id,
         name: req.user.name,
@@ -53,25 +85,26 @@ router.get(
 router.get(
   "/test-permission",
   authMiddleware,
-  permissionMiddleware("dashboard.view"),
+  permissionMiddleware(
+    "dashboard.view"
+  ),
   (req, res) => {
     return res.status(200).json({
       success: true,
-      message: "Permission dashboard.view berhasil.",
+      message:
+        "Permission dashboard.view berhasil.",
     });
   }
 );
 
-router.use((req, res) => {
-  return res.status(404).json({
-    success: false,
-    message: `Endpoint ${req.method} ${req.originalUrl} tidak ditemukan.`,
-  });
-});
-
 router.use(
-  "/organization",
-  organizationRoutes
+  (req, res) => {
+    return res.status(404).json({
+      success: false,
+      message:
+        `Endpoint ${req.method} ${req.originalUrl} tidak ditemukan.`,
+    });
+  }
 );
 
 module.exports = router;

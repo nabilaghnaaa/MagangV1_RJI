@@ -12,6 +12,12 @@ const permissionMiddleware = require(
   "../middlewares/permissionMiddleware"
 );
 
+const {
+  turnstileMiddleware,
+} = require(
+  "../middlewares/turnstileMiddleware"
+);
+
 const router = express.Router();
 
 /*
@@ -23,6 +29,7 @@ const router = express.Router();
 
 router.post(
   "/",
+  turnstileMiddleware,
   invitationController.create
 );
 
@@ -35,42 +42,54 @@ router.post(
 router.get(
   "/",
   authMiddleware,
-  permissionMiddleware("submission.view"),
+  permissionMiddleware(
+    "submission.view"
+  ),
   invitationController.getAll
 );
 
 router.get(
   "/:id",
   authMiddleware,
-  permissionMiddleware("submission.view"),
+  permissionMiddleware(
+    "submission.view"
+  ),
   invitationController.getById
 );
 
 router.put(
   "/:id",
   authMiddleware,
-  permissionMiddleware("submission.update"),
+  permissionMiddleware(
+    "submission.update"
+  ),
   invitationController.update
 );
 
 router.patch(
   "/:id/review",
   authMiddleware,
-  permissionMiddleware("submission.review"),
+  permissionMiddleware(
+    "submission.review"
+  ),
   invitationController.review
 );
 
 router.patch(
   "/:id/approve",
   authMiddleware,
-  permissionMiddleware("submission.approve"),
+  permissionMiddleware(
+    "submission.approve"
+  ),
   invitationController.approve
 );
 
 router.patch(
   "/:id/reject",
   authMiddleware,
-  permissionMiddleware("submission.reject"),
+  permissionMiddleware(
+    "submission.reject"
+  ),
   invitationController.reject
 );
 

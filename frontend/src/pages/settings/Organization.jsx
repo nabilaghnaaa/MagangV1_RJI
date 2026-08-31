@@ -14,7 +14,7 @@ import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import Textarea from "../../components/common/Textarea";
 
-import api from "../../services/api";
+import organizationService from "../../services/organizationService";
 
 const Organization = () => {
   const [form, setForm] = useState({
@@ -44,30 +44,35 @@ const Organization = () => {
 
     try {
       const response =
-        await api.get("/organization");
+        await organizationService.get();
+
+      const data =
+        response?.data || {};
 
       setForm({
         organization_name:
-          response.data.data.organization_name ||
+          data.organization_name ||
           "",
         organization_short_name:
-          response.data.data.organization_short_name ||
+          data.organization_short_name ||
           "",
         address:
-          response.data.data.address ||
+          data.address ||
           "",
         email:
-          response.data.data.email ||
+          data.email ||
           "",
         phone:
-          response.data.data.phone ||
+          data.phone ||
           "",
         website:
-          response.data.data.website ||
+          data.website ||
           "",
       });
     } catch (requestError) {
-      console.error(requestError);
+      console.error(
+        requestError
+      );
 
       setError(
         requestError.response?.data?.message ||
@@ -82,7 +87,9 @@ const Organization = () => {
     loadData();
   }, []);
 
-  const handleChange = (event) => {
+  const handleChange = (
+    event
+  ) => {
     const {
       name,
       value,
@@ -92,6 +99,9 @@ const Organization = () => {
       ...previous,
       [name]: value,
     }));
+
+    setError("");
+    setSuccess("");
   };
 
   const handleSubmit = async (
@@ -104,16 +114,19 @@ const Organization = () => {
     setSuccess("");
 
     try {
-      await api.put(
-        "/organization",
+      await organizationService.update(
         form
       );
 
       setSuccess(
         "Konfigurasi organisasi berhasil disimpan."
       );
+
+      await loadData();
     } catch (requestError) {
-      console.error(requestError);
+      console.error(
+        requestError
+      );
 
       setError(
         requestError.response?.data?.message ||

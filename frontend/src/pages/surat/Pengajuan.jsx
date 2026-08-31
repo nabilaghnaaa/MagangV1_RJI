@@ -15,16 +15,9 @@ import Button from "../../components/common/Button";
 import TableSearch from "../../components/table/TableSearch";
 import TableFilter from "../../components/table/TableFilter";
 import DataTable from "../../components/table/DataTable";
-import SuratStatusBadge from "../../components/surat/SuratStatusBadge";
 
 import invitationService from "../../services/invitationService";
 import assignmentService from "../../services/assignmentService";
-
-/*
-|--------------------------------------------------------------------------
-| Configuration
-|--------------------------------------------------------------------------
-*/
 
 const STATUS_OPTIONS = [
   {
@@ -65,12 +58,6 @@ const TYPE_LABELS = {
   assignment: "Surat Tugas",
 };
 
-/*
-|--------------------------------------------------------------------------
-| Helpers
-|--------------------------------------------------------------------------
-*/
-
 const formatDate = (value) => {
   if (!value) {
     return "-";
@@ -90,7 +77,6 @@ const formatDate = (value) => {
 const normalizeInvitation = (item) => ({
   ...item,
   type: "invitation",
-
   applicant_name: item.participant_name,
   applicant_email: item.participant_email,
 });
@@ -98,16 +84,41 @@ const normalizeInvitation = (item) => ({
 const normalizeAssignment = (item) => ({
   ...item,
   type: "assignment",
-
   applicant_name: item.member_name,
   applicant_email: item.member_email,
 });
 
-/*
-|--------------------------------------------------------------------------
-| Component
-|--------------------------------------------------------------------------
-*/
+const StatusBadge = ({ status }) => {
+  const labels = {
+    pending: "Menunggu",
+    review: "Direview",
+    approved: "Disetujui",
+    rejected: "Ditolak",
+  };
+
+  const classes = {
+    pending:
+      "border-yellow-200 bg-yellow-50 text-yellow-700",
+    review:
+      "border-blue-200 bg-blue-50 text-blue-700",
+    approved:
+      "border-green-200 bg-green-50 text-green-700",
+    rejected:
+      "border-red-200 bg-red-50 text-red-700",
+  };
+
+  return (
+    <span
+      className={[
+        "inline-flex rounded-full border px-3 py-1 text-xs font-semibold",
+        classes[status] ||
+          "border-neutral-200 bg-neutral-50 text-neutral-600",
+      ].join(" ")}
+    >
+      {labels[status] || status || "-"}
+    </span>
+  );
+};
 
 const Pengajuan = () => {
   const navigate = useNavigate();
@@ -121,12 +132,6 @@ const Pengajuan = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  /*
-  |--------------------------------------------------------------------------
-  | Load Data
-  |--------------------------------------------------------------------------
-  */
 
   const loadData = async () => {
     setLoading(true);
@@ -148,11 +153,15 @@ const Pengajuan = () => {
       ]);
 
       setInvitations(
-        invitationResponse?.data || []
+        Array.isArray(invitationResponse?.data)
+          ? invitationResponse.data
+          : []
       );
 
       setAssignments(
-        assignmentResponse?.data || []
+        Array.isArray(assignmentResponse?.data)
+          ? assignmentResponse.data
+          : []
       );
     } catch (requestError) {
       console.error(
@@ -172,91 +181,72 @@ const Pengajuan = () => {
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Initial Load & Status Filter
-  |--------------------------------------------------------------------------
-  */
-
   useEffect(() => {
     loadData();
   }, [status]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Combine + Filter Data
-  |--------------------------------------------------------------------------
-  */
-
   const rows = useMemo(() => {
-    const invitationRows = invitations.map(
-      normalizeInvitation
-    );
+    const invitationRows =
+      invitations.map(
+        normalizeInvitation
+      );
 
-    const assignmentRows = assignments.map(
-      normalizeAssignment
-    );
+    const assignmentRows =
+      assignments.map(
+        normalizeAssignment
+      );
 
     let result = [
       ...invitationRows,
       ...assignmentRows,
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Filter Type
-    |--------------------------------------------------------------------------
-    */
-
     if (activeType !== "all") {
       result = result.filter(
-        (item) => item.type === activeType
+        (item) =>
+          item.type === activeType
       );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Search
-    |--------------------------------------------------------------------------
-    */
-
-    const keyword = search.trim().toLowerCase();
+    const keyword = search
+      .trim()
+      .toLowerCase();
 
     if (keyword) {
-      result = result.filter((item) => {
-        const searchableValues = [
-          item.applicant_name,
-          item.applicant_email,
-          item.activity_name,
-          item.location,
-          item.organization,
-          item.member_organization,
-          item.member_role,
-        ];
+      result = result.filter(
+        (item) => {
+          const searchableValues = [
+            item.applicant_name,
+            item.applicant_email,
+            item.activity_name,
+            item.location,
+            item.organization,
+            item.member_organization,
+            item.member_role,
+          ];
 
-        return searchableValues
-          .filter(Boolean)
-          .some((value) =>
-            String(value)
-              .toLowerCase()
-              .includes(keyword)
-          );
-      });
+          return searchableValues
+            .filter(Boolean)
+            .some((value) =>
+              String(value)
+                .toLowerCase()
+                .includes(keyword)
+            );
+        }
+      );
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Sort Newest First
-    |--------------------------------------------------------------------------
-    */
 
     return result.sort((a, b) => {
       const firstDate = new Date(
-        a.createdAt || a.created_at || 0
+        a.createdAt ||
+          a.created_at ||
+          0
       ).getTime();
 
       const secondDate = new Date(
-        b.createdAt || b.created_at || 0
+        b.createdAt ||
+          b.created_at ||
+          0
       ).getTime();
 
       return secondDate - firstDate;
@@ -268,57 +258,37 @@ const Pengajuan = () => {
     search,
   ]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Summary
-  |--------------------------------------------------------------------------
-  */
-
   const summary = useMemo(() => {
+    const all = [
+      ...invitations,
+      ...assignments,
+    ];
+
     return {
-      all:
-        invitations.length +
-        assignments.length,
-
+      all: all.length,
       invitation: invitations.length,
-
       assignment: assignments.length,
-
-      pending: [
-        ...invitations,
-        ...assignments,
-      ].filter(
-        (item) => item.status === "pending"
+      pending: all.filter(
+        (item) =>
+          item.status === "pending"
       ).length,
-
-      review: [
-        ...invitations,
-        ...assignments,
-      ].filter(
-        (item) => item.status === "review"
+      review: all.filter(
+        (item) =>
+          item.status === "review"
       ).length,
-
-      approved: [
-        ...invitations,
-        ...assignments,
-      ].filter(
-        (item) => item.status === "approved"
+      approved: all.filter(
+        (item) =>
+          item.status === "approved"
       ).length,
-
-      rejected: [
-        ...invitations,
-        ...assignments,
-      ].filter(
-        (item) => item.status === "rejected"
+      rejected: all.filter(
+        (item) =>
+          item.status === "rejected"
       ).length,
     };
-  }, [invitations, assignments]);
-
-  /*
-  |--------------------------------------------------------------------------
-  | Open Detail
-  |--------------------------------------------------------------------------
-  */
+  }, [
+    invitations,
+    assignments,
+  ]);
 
   const handleOpenDetail = (row) => {
     navigate(
@@ -326,83 +296,81 @@ const Pengajuan = () => {
     );
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Table Columns
-  |--------------------------------------------------------------------------
-  */
-
   const columns = [
     {
       key: "applicant",
       label: "Pemohon",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
 
-      render: (row) => {
-        return (
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-rji-orange">
-              <UserRound size={18} />
-            </div>
-
-            <div className="min-w-0">
-              <p className="truncate font-semibold text-rji-black">
-                {row.applicant_name}
-              </p>
-
-              <p className="mt-0.5 truncate text-xs text-neutral-500">
-                {row.applicant_email}
-              </p>
-            </div>
+      render: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-rji-orange">
+            <UserRound size={18} />
           </div>
-        );
-      },
+
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-rji-black">
+              {row.applicant_name}
+            </p>
+
+            <p className="mt-0.5 truncate text-xs text-neutral-500">
+              {row.applicant_email}
+            </p>
+          </div>
+        </div>
+      ),
     },
 
     {
       key: "type",
       label: "Jenis",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
 
-      render: (row) => {
-        return (
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500">
-              <FileText size={16} />
-            </div>
-
-            <span className="text-sm font-medium text-rji-black">
-              {TYPE_LABELS[row.type] || "-"}
-            </span>
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500">
+            <FileText size={16} />
           </div>
-        );
-      },
+
+          <span className="text-sm font-medium text-rji-black">
+            {TYPE_LABELS[row.type] || "-"}
+          </span>
+        </div>
+      ),
     },
 
     {
       key: "activity_name",
       label: "Kegiatan",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
 
-      render: (row) => {
-        return (
-          <div className="max-w-xs">
-            <p className="truncate font-medium text-rji-black">
-              {row.activity_name}
-            </p>
+      render: (row) => (
+        <div className="max-w-xs">
+          <p className="truncate font-medium text-rji-black">
+            {row.activity_name}
+          </p>
 
-            <p className="mt-1 truncate text-xs text-neutral-500">
-              {row.location || "-"}
-            </p>
-          </div>
-        );
-      },
+          <p className="mt-1 truncate text-xs text-neutral-500">
+            {row.location || "-"}
+          </p>
+        </div>
+      ),
     },
 
     {
       key: "activity_date",
       label: "Tanggal",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
 
       render: (row) => (
         <span className="whitespace-nowrap text-sm text-neutral-600">
-          {formatDate(row.activity_date)}
+          {formatDate(
+            row.activity_date
+          )}
         </span>
       ),
     },
@@ -410,9 +378,11 @@ const Pengajuan = () => {
     {
       key: "status",
       label: "Status",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
 
       render: (row) => (
-        <SuratStatusBadge
+        <StatusBadge
           status={row.status}
         />
       ),
@@ -421,10 +391,11 @@ const Pengajuan = () => {
     {
       key: "action",
       label: "Aksi",
-      headerClassName: "text-right",
+      headerClassName:
+        "bg-orange-50 pr-10 text-right text-rji-black",
 
       render: (row) => (
-        <div className="flex justify-end">
+        <div className="flex justify-end pr-10">
           <Button
             variant="outline"
             size="sm"
@@ -439,12 +410,6 @@ const Pengajuan = () => {
       ),
     },
   ];
-
-  /*
-  |--------------------------------------------------------------------------
-  | Render
-  |--------------------------------------------------------------------------
-  */
 
   return (
     <PageContainer>
@@ -481,27 +446,15 @@ const Pengajuan = () => {
         </div>
       )}
 
-      {/* ===========================================================
-          Summary
-      ============================================================ */}
-
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card padding="p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-neutral-500">
-                Total Pengajuan
-              </p>
+          <p className="text-sm font-medium text-neutral-500">
+            Total Pengajuan
+          </p>
 
-              <p className="mt-2 text-3xl font-bold tracking-tight text-rji-black">
-                {summary.all}
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-rji-orange">
-              <ClipboardList size={21} />
-            </div>
-          </div>
+          <p className="mt-3 text-3xl font-bold tracking-tight text-rji-black">
+            {summary.all}
+          </p>
 
           <p className="mt-3 text-xs text-neutral-400">
             Semua jenis pengajuan
@@ -509,21 +462,13 @@ const Pengajuan = () => {
         </Card>
 
         <Card padding="p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-neutral-500">
-                Surat Undangan
-              </p>
+          <p className="text-sm font-medium text-neutral-500">
+            Surat Undangan
+          </p>
 
-              <p className="mt-2 text-3xl font-bold tracking-tight text-rji-black">
-                {summary.invitation}
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <FileText size={21} />
-            </div>
-          </div>
+          <p className="mt-3 text-3xl font-bold tracking-tight text-rji-black">
+            {summary.invitation}
+          </p>
 
           <p className="mt-3 text-xs text-neutral-400">
             Pengajuan dari peserta
@@ -531,21 +476,13 @@ const Pengajuan = () => {
         </Card>
 
         <Card padding="p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-neutral-500">
-                Surat Tugas
-              </p>
+          <p className="text-sm font-medium text-neutral-500">
+            Surat Tugas
+          </p>
 
-              <p className="mt-2 text-3xl font-bold tracking-tight text-rji-black">
-                {summary.assignment}
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-              <FileText size={21} />
-            </div>
-          </div>
+          <p className="mt-3 text-3xl font-bold tracking-tight text-rji-black">
+            {summary.assignment}
+          </p>
 
           <p className="mt-3 text-xs text-neutral-400">
             Pengajuan dari anggota RJI
@@ -553,32 +490,20 @@ const Pengajuan = () => {
         </Card>
 
         <Card padding="p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-neutral-500">
-                Perlu Review
-              </p>
+          <p className="text-sm font-medium text-neutral-500">
+            Perlu Review
+          </p>
 
-              <p className="mt-2 text-3xl font-bold tracking-tight text-rji-black">
-                {summary.pending +
-                  summary.review}
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-50 text-yellow-600">
-              <ClipboardList size={21} />
-            </div>
-          </div>
+          <p className="mt-3 text-3xl font-bold tracking-tight text-rji-black">
+            {summary.pending +
+              summary.review}
+          </p>
 
           <p className="mt-3 text-xs text-neutral-400">
             Menunggu pemeriksaan admin
           </p>
         </Card>
       </div>
-
-      {/* ===========================================================
-          Main Table
-      ============================================================ */}
 
       <Card>
         <div className="flex flex-col gap-5 border-b border-neutral-200 pb-5">
@@ -588,87 +513,91 @@ const Pengajuan = () => {
             </h2>
 
             <p className="mt-1 text-sm text-neutral-500">
-              Periksa kesesuaian data sebelum
-              pengajuan disetujui.
+              Periksa kesesuaian data sebelum pengajuan disetujui.
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            {/* Type tabs */}
-
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex flex-wrap gap-2">
-              {TYPE_OPTIONS.map((option) => {
-                const active =
-                  activeType === option.value;
+              {TYPE_OPTIONS.map(
+                (option) => {
+                  const active =
+                    activeType ===
+                    option.value;
 
-                let count = summary.all;
+                  let count =
+                    summary.all;
 
-                if (
-                  option.value ===
-                  "invitation"
-                ) {
-                  count =
-                    summary.invitation;
-                }
+                  if (
+                    option.value ===
+                    "invitation"
+                  ) {
+                    count =
+                      summary.invitation;
+                  }
 
-                if (
-                  option.value ===
-                  "assignment"
-                ) {
-                  count =
-                    summary.assignment;
-                }
+                  if (
+                    option.value ===
+                    "assignment"
+                  ) {
+                    count =
+                      summary.assignment;
+                  }
 
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() =>
-                      setActiveType(
+                  return (
+                    <button
+                      key={
                         option.value
-                      )
-                    }
-                    className={[
-                      "inline-flex items-center gap-2 rounded-xl px-4 py-2",
-                      "text-sm font-semibold transition-all",
-                      active
-                        ? "bg-rji-black text-white shadow-sm"
-                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-rji-black",
-                    ].join(" ")}
-                  >
-                    <span>
-                      {option.label}
-                    </span>
-
-                    <span
+                      }
+                      type="button"
+                      onClick={() =>
+                        setActiveType(
+                          option.value
+                        )
+                      }
                       className={[
-                        "rounded-full px-2 py-0.5 text-[11px]",
+                        "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all",
                         active
-                          ? "bg-white/15 text-white"
-                          : "bg-white text-neutral-500",
+                          ? "bg-rji-black text-white shadow-sm"
+                          : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-rji-black",
                       ].join(" ")}
                     >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
+                      <span>
+                        {option.label}
+                      </span>
+
+                      <span
+                        className={[
+                          "rounded-full px-2 py-0.5 text-[11px]",
+                          active
+                            ? "bg-white/15 text-white"
+                            : "bg-white text-neutral-500",
+                        ].join(" ")}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                }
+              )}
             </div>
 
-            {/* Search + Filter */}
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center xl:w-auto">
+              <div className="w-full sm:w-80 xl:w-80">
+                <TableSearch
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Cari pemohon atau kegiatan..."
+                />
+              </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <TableSearch
-                value={search}
-                onChange={setSearch}
-                placeholder="Cari pemohon atau kegiatan..."
-              />
-
-              <div className="sm:w-44">
+              <div className="w-full sm:w-56 xl:w-60">
                 <TableFilter
                   value={status}
                   onChange={setStatus}
-                  options={STATUS_OPTIONS}
+                  options={
+                    STATUS_OPTIONS
+                  }
                   label="Semua status"
                 />
               </div>
@@ -676,7 +605,7 @@ const Pengajuan = () => {
           </div>
         </div>
 
-        <div className="mt-5">
+        <div className="mt-5 overflow-hidden">
           <DataTable
             columns={columns}
             data={rows}

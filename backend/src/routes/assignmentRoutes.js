@@ -1,13 +1,28 @@
 const express = require("express");
 
-const assignmentController = require("../controllers/assignmentController");
+const assignmentController = require(
+  "../controllers/assignmentController"
+);
 
-const authMiddleware = require("../middlewares/authMiddleware");
-const permissionMiddleware = require("../middlewares/permissionMiddleware");
+const authMiddleware = require(
+  "../middlewares/authMiddleware"
+);
+
+const permissionMiddleware = require(
+  "../middlewares/permissionMiddleware"
+);
 
 const {
   uploadAssignmentAttachment,
-} = require("../middlewares/uploadMiddleware");
+} = require(
+  "../middlewares/uploadMiddleware"
+);
+
+const {
+  turnstileMiddleware,
+} = require(
+  "../middlewares/turnstileMiddleware"
+);
 
 const router = express.Router();
 
@@ -17,11 +32,15 @@ const router = express.Router();
 |--------------------------------------------------------------------------
 | Anggota RJI mengajukan Surat Tugas tanpa login.
 |--------------------------------------------------------------------------
+
 */
 
 router.post(
   "/",
-  uploadAssignmentAttachment.single("request_letter"),
+  turnstileMiddleware,
+  uploadAssignmentAttachment.single(
+    "request_letter"
+  ),
   assignmentController.create
 );
 
@@ -34,42 +53,54 @@ router.post(
 router.get(
   "/",
   authMiddleware,
-  permissionMiddleware("submission.view"),
+  permissionMiddleware(
+    "submission.view"
+  ),
   assignmentController.getAll
 );
 
 router.get(
   "/:id",
   authMiddleware,
-  permissionMiddleware("submission.view"),
+  permissionMiddleware(
+    "submission.view"
+  ),
   assignmentController.getById
 );
 
 router.put(
   "/:id",
   authMiddleware,
-  permissionMiddleware("submission.update"),
+  permissionMiddleware(
+    "submission.update"
+  ),
   assignmentController.update
 );
 
 router.patch(
   "/:id/review",
   authMiddleware,
-  permissionMiddleware("submission.review"),
+  permissionMiddleware(
+    "submission.review"
+  ),
   assignmentController.review
 );
 
 router.patch(
   "/:id/approve",
   authMiddleware,
-  permissionMiddleware("submission.approve"),
+  permissionMiddleware(
+    "submission.approve"
+  ),
   assignmentController.approve
 );
 
 router.patch(
   "/:id/reject",
   authMiddleware,
-  permissionMiddleware("submission.reject"),
+  permissionMiddleware(
+    "submission.reject"
+  ),
   assignmentController.reject
 );
 

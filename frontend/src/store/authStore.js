@@ -8,7 +8,9 @@ const STORAGE_KEYS = {
 
 const getStoredUser = () => {
   try {
-    const storedUser = localStorage.getItem(STORAGE_KEYS.user);
+    const storedUser = localStorage.getItem(
+      STORAGE_KEYS.user
+    );
 
     if (!storedUser) {
       return null;
@@ -16,107 +18,201 @@ const getStoredUser = () => {
 
     return JSON.parse(storedUser);
   } catch (error) {
-    console.error("Gagal membaca user dari localStorage:", error);
-    localStorage.removeItem(STORAGE_KEYS.user);
+    console.error(
+      "Gagal membaca user dari localStorage:",
+      error
+    );
+
+    localStorage.removeItem(
+      STORAGE_KEYS.user
+    );
+
     return null;
   }
 };
 
 const getStoredToken = () => {
-  return localStorage.getItem(STORAGE_KEYS.token);
+  return localStorage.getItem(
+    STORAGE_KEYS.token
+  );
 };
 
-const saveSession = (token, user) => {
-  localStorage.setItem(STORAGE_KEYS.token, token);
-  localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+const saveSession = (
+  token,
+  user
+) => {
+  localStorage.setItem(
+    STORAGE_KEYS.token,
+    token
+  );
+
+  localStorage.setItem(
+    STORAGE_KEYS.user,
+    JSON.stringify(user)
+  );
 };
 
 const clearSession = () => {
-  localStorage.removeItem(STORAGE_KEYS.token);
-  localStorage.removeItem(STORAGE_KEYS.user);
+  localStorage.removeItem(
+    STORAGE_KEYS.token
+  );
+
+  localStorage.removeItem(
+    STORAGE_KEYS.user
+  );
 };
 
-const useAuthStore = create((set, get) => ({
-  token: getStoredToken(),
-  user: getStoredUser(),
-  isAuthenticated: Boolean(getStoredToken()),
-  isLoading: false,
+const useAuthStore = create(
+  (set, get) => ({
+    token: getStoredToken(),
+    user: getStoredUser(),
+    isAuthenticated:
+      Boolean(getStoredToken()),
+    isLoading: false,
 
-  login: async (email, password) => {
-    set({ isLoading: true });
-
-    try {
-      const response = await authService.login(
-        email,
-        password
-      );
-
-      const { token, user } = response.data;
-
-      saveSession(token, user);
-
+    login: async ({
+      email,
+      password,
+    }) => {
       set({
-        token,
-        user,
-        isAuthenticated: true,
-        isLoading: false,
+        isLoading: true,
       });
 
-      return {
-        success: true,
-        token,
-        user,
-      };
-    } catch (error) {
+      try {
+        if (
+          !email ||
+          !String(email).trim()
+        ) {
+          throw new Error(
+            "Email wajib diisi."
+          );
+        }
+
+        if (!password) {
+          throw new Error(
+            "Password wajib diisi."
+          );
+        }
+
+        const response =
+          await authService.login(
+            String(email).trim(),
+            password
+          );
+
+        const token =
+          response?.data?.token;
+
+        const user =
+          response?.data?.user;
+
+        if (!token) {
+          throw new Error(
+            "Token login tidak ditemukan."
+          );
+        }
+
+        if (!user) {
+          throw new Error(
+            "Data user tidak ditemukan."
+          );
+        }
+
+        saveSession(
+          token,
+          user
+        );
+
+        set({
+          token,
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+
+        return {
+          success: true,
+          token,
+          user,
+        };
+      } catch (error) {
+        set({
+          isLoading: false,
+        });
+
+        throw new Error(
+          error.response?.data?.message ||
+            error.message ||
+            "Login gagal. Silakan coba lagi."
+        );
+      }
+    },
+
+    restoreSession: async () => {
+      const token =
+        getStoredToken();
+
+      if (!token) {
+        set({
+          token: null,
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
+
+        return false;
+      }
+
       set({
-        isLoading: false,
+        isLoading: true,
       });
 
-      throw new Error(
-        error.response?.data?.message ||
-          "Login gagal. Silakan coba lagi."
-      );
-    }
-  },
+      try {
+        const response =
+          await authService.getCurrentUser();
 
-  restoreSession: async () => {
-    const token = getStoredToken();
+        const user =
+          response?.data;
 
-    if (!token) {
-      set({
-        token: null,
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
+        if (!user) {
+          throw new Error(
+            "Data user tidak ditemukan."
+          );
+        }
 
-      return false;
-    }
+        localStorage.setItem(
+          STORAGE_KEYS.user,
+          JSON.stringify(user)
+        );
 
-    set({
-      isLoading: true,
-    });
+        set({
+          token,
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+        });
 
-    try {
-      const response =
-        await authService.getCurrentUser();
+        return true;
+      } catch (error) {
+        console.error(
+          "Gagal memulihkan session:",
+          error
+        );
 
-      const user = response.data;
+        clearSession();
 
-      localStorage.setItem(
-        STORAGE_KEYS.user,
-        JSON.stringify(user)
-      );
+        set({
+          token: null,
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
 
-      set({
-        token,
-        user,
-        isAuthenticated: true,
-        isLoading: false,
-      });
+        return false;
+      }
+    },
 
-      return true;
-    } catch (error) {
+    logout: () => {
       clearSession();
 
       set({
@@ -125,55 +221,68 @@ const useAuthStore = create((set, get) => ({
         isAuthenticated: false,
         isLoading: false,
       });
+    },
 
-      return false;
-    }
-  },
+    hasRole: (
+      roleName
+    ) => {
+      const user =
+        get().user;
 
-  logout: () => {
-    clearSession();
+      return (
+        user?.role?.name ===
+        roleName
+      );
+    },
 
-    set({
-      token: null,
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
-  },
+    hasPermission: (
+      permissionName
+    ) => {
+      const user =
+        get().user;
 
-  hasRole: (roleName) => {
-    const user = get().user;
+      const permissions =
+        user?.permissions || [];
 
-    return user?.role?.name === roleName;
-  },
+      return permissions.includes(
+        permissionName
+      );
+    },
 
-  hasPermission: (permissionName) => {
-    const user = get().user;
+    hasAnyPermission: (
+      permissionNames = []
+    ) => {
+      const user =
+        get().user;
 
-    const permissions = user?.permissions || [];
+      const permissions =
+        user?.permissions || [];
 
-    return permissions.includes(permissionName);
-  },
+      return permissionNames.some(
+        (permission) =>
+          permissions.includes(
+            permission
+          )
+      );
+    },
 
-  hasAnyPermission: (permissionNames = []) => {
-    const user = get().user;
+    hasAllPermissions: (
+      permissionNames = []
+    ) => {
+      const user =
+        get().user;
 
-    const permissions = user?.permissions || [];
+      const permissions =
+        user?.permissions || [];
 
-    return permissionNames.some((permission) =>
-      permissions.includes(permission)
-    );
-  },
-
-  hasAllPermissions: (permissionNames = []) => {
-    const user = get().user;
-
-    const permissions = user?.permissions || [];
-
-    return permissionNames.every((permission) =>
-      permissions.includes(permission)
-    );
-  },
-}));
+      return permissionNames.every(
+        (permission) =>
+          permissions.includes(
+            permission
+          )
+      );
+    },
+  })
+);
 
 export default useAuthStore;

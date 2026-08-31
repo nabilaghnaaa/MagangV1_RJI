@@ -3,12 +3,13 @@ import {
   ArrowLeft,
   CalendarDays,
   CheckCircle2,
+  Copy,
   Download,
   FileCheck2,
   FileText,
   Mail,
+  MapPin,
   RefreshCw,
-  ShieldCheck,
   UserRound,
   XCircle,
 } from "lucide-react";
@@ -44,19 +45,23 @@ const formatType = (type) => {
     : "Surat Tugas";
 };
 
-const DetailItem = ({ icon: Icon, label, value }) => {
+const DetailItem = ({
+  icon: Icon,
+  label,
+  value,
+}) => {
   return (
-    <div className="flex gap-3">
+    <div className="flex min-w-0 gap-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-rji-orange">
         <Icon size={18} />
       </div>
 
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-neutral-400">
           {label}
         </p>
 
-        <p className="mt-1 break-words text-sm font-semibold text-rji-black">
+        <p className="mt-1 break-words text-sm font-semibold leading-6 text-rji-black">
           {value || "-"}
         </p>
       </div>
@@ -73,6 +78,7 @@ const DetailSurat = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const loadSurat = async () => {
     setLoading(true);
@@ -80,7 +86,8 @@ const DetailSurat = () => {
 
     try {
       const response = await suratService.getById(id);
-      setSurat(response.data);
+
+      setSurat(response?.data || null);
     } catch (requestError) {
       console.error(requestError);
 
@@ -107,8 +114,15 @@ const DetailSurat = () => {
     try {
       const response = await suratService.generatePdf(id);
 
-      setSurat(response.data?.surat || surat);
-      setMessage("PDF surat berhasil dibuat.");
+      setSurat(
+        response?.data?.surat ||
+          surat
+      );
+
+      setMessage(
+        "PDF surat berhasil dibuat."
+      );
+
       await loadSurat();
     } catch (requestError) {
       console.error(requestError);
@@ -128,25 +142,43 @@ const DetailSurat = () => {
     setMessage("");
 
     try {
-      const response = await suratService.downloadPdf(id);
+      const response =
+        await suratService.downloadPdf(id);
 
-      const blob = new Blob([response.data], {
-        type: "application/pdf",
-      });
+      const blob = new Blob(
+        [response.data],
+        {
+          type: "application/pdf",
+        }
+      );
 
-      const url = window.URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
+      const url =
+        window.URL.createObjectURL(blob);
+
+      const anchor =
+        document.createElement("a");
 
       anchor.href = url;
       anchor.download = `${String(
-        surat.letter_number || `surat-${surat.id}`
-      ).replace(/[^a-zA-Z0-9-_]/g, "_")}.pdf`;
+        surat.letter_number ||
+          `surat-${surat.id}`
+      ).replace(
+        /[^a-zA-Z0-9-_]/g,
+        "_"
+      )}.pdf`;
 
-      document.body.appendChild(anchor);
+      document.body.appendChild(
+        anchor
+      );
+
       anchor.click();
       anchor.remove();
 
       window.URL.revokeObjectURL(url);
+
+      setMessage(
+        "PDF berhasil diunduh."
+      );
     } catch (requestError) {
       console.error(requestError);
 
@@ -165,13 +197,18 @@ const DetailSurat = () => {
     setMessage("");
 
     try {
-      const response = await suratService.downloadPdf(id);
+      const response =
+        await suratService.downloadPdf(id);
 
-      const blob = new Blob([response.data], {
-        type: "application/pdf",
-      });
+      const blob = new Blob(
+        [response.data],
+        {
+          type: "application/pdf",
+        }
+      );
 
-      const url = window.URL.createObjectURL(blob);
+      const url =
+        window.URL.createObjectURL(blob);
 
       window.open(
         url,
@@ -227,6 +264,37 @@ const DetailSurat = () => {
     }
   };
 
+  const handleCopyVerification = async () => {
+    const verificationUrl =
+      surat?.verification
+        ?.verification_url;
+
+    if (!verificationUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        verificationUrl
+      );
+
+      setCopySuccess(true);
+
+      setTimeout(() => {
+        setCopySuccess(false);
+      }, 2000);
+    } catch (copyError) {
+      console.error(
+        "Gagal menyalin URL:",
+        copyError
+      );
+
+      setError(
+        "URL verifikasi gagal disalin."
+      );
+    }
+  };
+
   if (loading) {
     return (
       <PageContainer>
@@ -267,11 +335,28 @@ const DetailSurat = () => {
     );
   }
 
-  const verification =
-    surat.verification || null;
+  const sourceData =
+    surat.type === "invitation"
+      ? surat.invitation
+      : surat.assignment;
 
-  const verificationActive =
-    verification?.status === "active";
+  const applicantName =
+    surat.type === "invitation"
+      ? sourceData?.participant_name
+      : sourceData?.member_name;
+
+  const applicantEmail =
+    surat.type === "invitation"
+      ? sourceData?.participant_email
+      : sourceData?.member_email;
+
+  const fileName = surat.pdf_path
+    ? surat.pdf_path.split("/").pop()
+    : "PDF belum tersedia";
+
+  const verificationUrl =
+    surat.verification
+      ?.verification_url || "";
 
   return (
     <PageContainer>
@@ -318,17 +403,19 @@ const DetailSurat = () => {
         </div>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[1.35fr_0.75fr]">
-        <div className="space-y-6">
+      <div className="space-y-6">
+        <div className="grid gap-6 xl:grid-cols-2">
           <Card
             title="Informasi Surat"
-            description="Identitas surat final yang diterbitkan."
+            description="Identitas lengkap surat yang telah diterbitkan."
           >
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid gap-x-10 gap-y-7 sm:grid-cols-2">
               <DetailItem
                 icon={FileText}
                 label="Nomor Surat"
-                value={surat.letter_number}
+                value={
+                  surat.letter_number
+                }
               />
 
               <DetailItem
@@ -348,6 +435,14 @@ const DetailSurat = () => {
               />
 
               <DetailItem
+                icon={UserRound}
+                label="Penerima"
+                value={
+                  surat.recipient_name
+                }
+              />
+
+              <DetailItem
                 icon={Mail}
                 label="Email Penerima"
                 value={
@@ -355,25 +450,13 @@ const DetailSurat = () => {
                 }
               />
 
-              <div className="sm:col-span-2">
-                <DetailItem
-                  icon={UserRound}
-                  label="Penerima"
-                  value={
-                    surat.recipient_name
-                  }
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <DetailItem
-                  icon={FileText}
-                  label="Perihal"
-                  value={
-                    surat.subject
-                  }
-                />
-              </div>
+              <DetailItem
+                icon={FileText}
+                label="Perihal"
+                value={
+                  surat.subject
+                }
+              />
             </div>
           </Card>
 
@@ -381,146 +464,126 @@ const DetailSurat = () => {
             title="Sumber Pengajuan"
             description="Data pengajuan yang menjadi dasar penerbitan surat."
           >
-            {surat.type ===
-            "invitation" ? (
-              <div className="grid gap-6 sm:grid-cols-2">
-                <DetailItem
-                  icon={UserRound}
-                  label="Peserta"
-                  value={
-                    surat.invitation
-                      ?.participant_name
-                  }
-                />
+            <div className="grid gap-x-10 gap-y-7 sm:grid-cols-2">
+              <DetailItem
+                icon={UserRound}
+                label={
+                  surat.type ===
+                  "invitation"
+                    ? "Peserta"
+                    : "Anggota"
+                }
+                value={
+                  applicantName
+                }
+              />
 
-                <DetailItem
-                  icon={Mail}
-                  label="Email Peserta"
-                  value={
-                    surat.invitation
-                      ?.participant_email
-                  }
-                />
+              <DetailItem
+                icon={Mail}
+                label={
+                  surat.type ===
+                  "invitation"
+                    ? "Email Peserta"
+                    : "Email Anggota"
+                }
+                value={
+                  applicantEmail
+                }
+              />
 
-                <DetailItem
-                  icon={FileText}
-                  label="Kegiatan"
-                  value={
-                    surat.invitation
-                      ?.activity_name
-                  }
-                />
+              <DetailItem
+                icon={FileText}
+                label="Kegiatan"
+                value={
+                  sourceData?.activity_name
+                }
+              />
 
-                <DetailItem
-                  icon={CalendarDays}
-                  label="Tanggal Kegiatan"
-                  value={formatDate(
-                    surat.invitation
-                      ?.activity_date
-                  )}
-                />
-              </div>
-            ) : (
-              <div className="grid gap-6 sm:grid-cols-2">
-                <DetailItem
-                  icon={UserRound}
-                  label="Anggota"
-                  value={
-                    surat.assignment
-                      ?.member_name
-                  }
-                />
+              <DetailItem
+                icon={CalendarDays}
+                label="Tanggal Kegiatan"
+                value={formatDate(
+                  sourceData?.activity_date
+                )}
+              />
 
-                <DetailItem
-                  icon={Mail}
-                  label="Email Anggota"
-                  value={
-                    surat.assignment
-                      ?.member_email
-                  }
-                />
+              <DetailItem
+                icon={MapPin}
+                label="Lokasi"
+                value={
+                  sourceData?.location
+                }
+              />
 
-                <DetailItem
-                  icon={FileCheck2}
-                  label="Peran"
-                  value={
-                    surat.assignment
-                      ?.member_role
-                  }
-                />
+              {surat.type ===
+                "assignment" && (
+                <>
+                  <DetailItem
+                    icon={FileCheck2}
+                    label="Peran"
+                    value={
+                      sourceData?.member_role
+                    }
+                  />
 
-                <DetailItem
-                  icon={FileText}
-                  label="Kegiatan"
-                  value={
-                    surat.assignment
-                      ?.activity_name
-                  }
-                />
-
-                <DetailItem
-                  icon={CalendarDays}
-                  label="Tanggal Kegiatan"
-                  value={formatDate(
-                    surat.assignment
-                      ?.activity_date
-                  )}
-                />
-
-                <DetailItem
-                  icon={FileText}
-                  label="Nomor Surat Permohonan"
-                  value={
-                    surat.assignment
-                      ?.request_letter_number
-                  }
-                />
-              </div>
-            )}
+                  <DetailItem
+                    icon={FileText}
+                    label="Nomor Surat Permohonan"
+                    value={
+                      sourceData?.request_letter_number
+                    }
+                  />
+                </>
+              )}
+            </div>
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="grid gap-6 xl:grid-cols-2">
           <Card
             title="PDF Surat"
-            description="Dokumen final yang dihasilkan sistem."
+            description="Dokumen final yang dihasilkan oleh sistem."
           >
             <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
-              <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-rji-orange">
-                  <FileText size={20} />
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-rji-orange">
+                  <FileText size={21} />
                 </div>
 
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-rji-black">
-                    {surat.pdf_path
-                      ? surat.pdf_path.split("/").pop()
-                      : "PDF belum tersedia"}
+                  <p className="break-all text-sm font-semibold text-rji-black">
+                    {fileName}
                   </p>
 
-                  <p className="mt-1 text-xs text-neutral-500">
+                  <p className="mt-1 text-xs leading-5 text-neutral-500">
                     {surat.pdf_generated_at
                       ? `Dibuat ${formatDate(
                           surat.pdf_generated_at
                         )}`
-                      : "Belum pernah dibuat"}
+                      : "PDF belum pernah dibuat"}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
               <Button
                 variant="outline"
+                className="w-full"
                 icon={RefreshCw}
-                loading={actionLoading}
-                onClick={handleGeneratePdf}
+                loading={
+                  actionLoading
+                }
+                onClick={
+                  handleGeneratePdf
+                }
               >
                 Generate Ulang PDF
               </Button>
 
               <Button
                 variant="outline"
+                className="w-full"
                 icon={FileText}
                 disabled={
                   actionLoading ||
@@ -535,6 +598,7 @@ const DetailSurat = () => {
 
               <Button
                 variant="outline"
+                className="w-full"
                 icon={Download}
                 disabled={
                   actionLoading ||
@@ -549,8 +613,11 @@ const DetailSurat = () => {
 
               <Button
                 variant="primary"
+                className="w-full"
                 icon={Mail}
-                loading={actionLoading}
+                loading={
+                  actionLoading
+                }
                 disabled={
                   !surat.pdf_path
                 }
@@ -564,97 +631,83 @@ const DetailSurat = () => {
           </Card>
 
           <Card
-            title="Verifikasi Surat"
-            description="Status QR dan verifikasi dokumen."
+            title="Informasi Penerima"
+            description="Kontak penerima dokumen surat."
           >
-            <div
-              className={[
-                "rounded-2xl border p-5",
-                verificationActive
-                  ? "border-green-200 bg-green-50"
-                  : "border-red-200 bg-red-50",
-              ].join(" ")}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className={[
-                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
-                    verificationActive
-                      ? "bg-green-100 text-green-600"
-                      : "bg-red-100 text-red-600",
-                  ].join(" ")}
-                >
-                  {verificationActive ? (
-                    <ShieldCheck size={21} />
-                  ) : (
-                    <XCircle size={21} />
-                  )}
-                </div>
-
-                <div>
-                  <p
-                    className={[
-                      "text-sm font-semibold",
-                      verificationActive
-                        ? "text-green-800"
-                        : "text-red-800",
-                    ].join(" ")}
-                  >
-                    {verificationActive
-                      ? "Verifikasi Aktif"
-                      : "Verifikasi Tidak Aktif"}
-                  </p>
-
-                  <p
-                    className={[
-                      "mt-1 text-xs leading-5",
-                      verificationActive
-                        ? "text-green-700"
-                        : "text-red-700",
-                    ].join(" ")}
-                  >
-                    {verificationActive
-                      ? "QR Code surat dapat digunakan untuk memverifikasi keaslian dokumen."
-                      : "QR Code surat tidak dapat digunakan saat ini."}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 space-y-4">
+            <div className="space-y-5">
               <DetailItem
-                icon={ShieldCheck}
-                label="Jumlah Verifikasi"
+                icon={UserRound}
+                label="Nama Penerima"
                 value={
-                  verification
-                    ? verification.verified_count
-                    : "0"
+                  surat.recipient_name
                 }
               />
 
               <DetailItem
-                icon={CalendarDays}
-                label="Terakhir Diverifikasi"
+                icon={Mail}
+                label="Email Penerima"
                 value={
-                  verification?.last_verified_at
-                    ? formatDate(
-                        verification.last_verified_at
-                      )
-                    : "-"
+                  surat.recipient_email
                 }
               />
 
-              <DetailItem
-                icon={FileText}
-                label="URL Verifikasi"
-                value={
-                  verification?.verification_url ||
-                  "-"
-                }
-              />
+              {sourceData?.member_phone ||
+              sourceData?.participant_phone ? (
+                <DetailItem
+                  icon={FileText}
+                  label="Nomor Telepon"
+                  value={
+                    sourceData?.member_phone ||
+                    sourceData?.participant_phone
+                  }
+                />
+              ) : null}
             </div>
           </Card>
         </div>
+
+        <Card
+          title="URL Verifikasi"
+          description="Gunakan tautan ini untuk memverifikasi keaslian surat."
+        >
+          <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-rji-orange">
+                <FileText size={20} />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="break-all text-sm font-medium leading-6 text-rji-black">
+                  {verificationUrl ||
+                    "URL verifikasi belum tersedia."}
+                </p>
+
+                {verificationUrl && (
+                  <p className="mt-1 text-xs text-neutral-400">
+                    Tautan ini dapat dibagikan untuk
+                    pemeriksaan keaslian dokumen.
+                  </p>
+                )}
+              </div>
+
+              {verificationUrl && (
+                <button
+                  type="button"
+                  onClick={
+                    handleCopyVerification
+                  }
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-100"
+                >
+                  <Copy size={16} />
+
+                  {copySuccess
+                    ? "Tersalin"
+                    : "Salin URL"}
+                </button>
+              )}
+            </div>
+          </div>
+        </Card>
       </div>
     </PageContainer>
   );
