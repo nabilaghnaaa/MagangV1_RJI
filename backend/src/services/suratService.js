@@ -233,7 +233,9 @@ const applyOrganizationSnapshot = async (
   transaction
 ) => {
   const organizationSetting =
-    await getActiveOrganizationSetting(transaction);
+    await getActiveOrganizationSetting(
+      transaction
+    );
 
   if (!organizationSetting) {
     throw new Error(
@@ -245,18 +247,30 @@ const applyOrganizationSnapshot = async (
     {
       organization_name:
         organizationSetting.organization_name,
+
       organization_short_name:
         organizationSetting.organization_short_name,
+
       organization_address:
         organizationSetting.address,
+
       organization_email:
         organizationSetting.email,
+
       organization_phone:
         organizationSetting.phone,
+
       organization_website:
         organizationSetting.website,
+
       organization_logo_path:
         organizationSetting.logo_path,
+
+      letterhead_top_path:
+        organizationSetting.letterhead_top_path,
+
+      letterhead_bottom_path:
+        organizationSetting.letterhead_bottom_path,
     },
     {
       transaction,

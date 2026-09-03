@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download, Eye, FileCheck2, Mail, RefreshCw, Search, ShieldCheck } from "lucide-react";
+import {
+  Download,
+  Eye,
+  Mail,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import PageContainer from "../../components/layout/PageContainer";
 import PageHeader from "../../components/layout/PageHeader";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
+import StatCard from "../../components/common/StatCard";
 import TableFilter from "../../components/table/TableFilter";
 import DataTable from "../../components/table/DataTable";
 import SuratIssuedStatusBadge from "../../components/surat/SuratIssuedStatusBadge";
@@ -66,28 +74,47 @@ const SuratTerbit = () => {
   const navigate = useNavigate();
 
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [type, setType] = useState("");
+  const [loading, setLoading] =
+    useState(false);
+  const [error, setError] =
+    useState("");
+  const [search, setSearch] =
+    useState("");
+  const [status, setStatus] =
+    useState("");
+  const [type, setType] =
+    useState("");
 
   const loadData = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await suratService.getAll({
-        ...(status ? { status } : {}),
-        ...(type ? { type } : {}),
-      });
+      const response =
+        await suratService.getAll({
+          ...(status
+            ? { status }
+            : {}),
+          ...(type
+            ? { type }
+            : {}),
+        });
 
-      setData(response.data || []);
+      setData(
+        Array.isArray(
+          response?.data
+        )
+          ? response.data
+          : []
+      );
     } catch (requestError) {
-      console.error(requestError);
+      console.error(
+        requestError
+      );
 
       setError(
-        requestError.response?.data?.message ||
+        requestError.response
+          ?.data?.message ||
           "Gagal mengambil data surat terbit."
       );
     } finally {
@@ -100,77 +127,147 @@ const SuratTerbit = () => {
   }, [status, type]);
 
   const filteredData = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
+    const keyword = search
+      .trim()
+      .toLowerCase();
 
     if (!keyword) {
       return data;
     }
 
-    return data.filter((item) => {
-      const values = [
-        item.letter_number,
-        item.subject,
-        item.recipient_name,
-        item.recipient_email,
-      ];
+    return data.filter(
+      (item) => {
+        const values = [
+          item.letter_number,
+          item.subject,
+          item.recipient_name,
+          item.recipient_email,
+        ];
 
-      return values
-        .filter(Boolean)
-        .some((value) =>
-          String(value)
-            .toLowerCase()
-            .includes(keyword)
-        );
-    });
+        return values
+          .filter(Boolean)
+          .some((value) =>
+            String(value)
+              .toLowerCase()
+              .includes(keyword)
+          );
+      }
+    );
   }, [data, search]);
 
-  const handleDownload = async (id, letterNumber) => {
+  const summary = useMemo(() => {
+    return {
+      total:
+        data.length,
+
+      invitation:
+        data.filter(
+          (item) =>
+            item.type ===
+            "invitation"
+        ).length,
+
+      assignment:
+        data.filter(
+          (item) =>
+            item.type ===
+            "assignment"
+        ).length,
+
+      sent:
+        data.filter(
+          (item) =>
+            item.status ===
+            "sent"
+        ).length,
+    };
+  }, [data]);
+
+  const handleDownload = async (
+    id,
+    letterNumber
+  ) => {
     try {
-      const response = await suratService.downloadPdf(id);
+      const response =
+        await suratService.downloadPdf(
+          id
+        );
 
-      const blob = new Blob([response.data], {
-        type: "application/pdf",
-      });
+      const blob = new Blob(
+        [response.data],
+        {
+          type: "application/pdf",
+        }
+      );
 
-      const url = window.URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
+      const url =
+        window.URL.createObjectURL(
+          blob
+        );
+
+      const anchor =
+        document.createElement(
+          "a"
+        );
 
       anchor.href = url;
-      anchor.download = `${letterNumber.replace(/[^a-zA-Z0-9-_]/g, "_")}.pdf`;
 
-      document.body.appendChild(anchor);
+      anchor.download = `${String(
+        letterNumber
+      ).replace(
+        /[^a-zA-Z0-9-_]/g,
+        "_"
+      )}.pdf`;
+
+      document.body.appendChild(
+        anchor
+      );
+
       anchor.click();
       anchor.remove();
 
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(
+        url
+      );
     } catch (requestError) {
-      console.error(requestError);
+      console.error(
+        requestError
+      );
 
       setError(
-        requestError.response?.data?.message ||
+        requestError.response
+          ?.data?.message ||
           "Gagal mengunduh PDF."
       );
     }
   };
 
-  const handleSendEmail = async (id) => {
-    const confirmed = window.confirm(
-      "Kirim ulang surat ini melalui email?"
-    );
+  const handleSendEmail = async (
+    id
+  ) => {
+    const confirmed =
+      window.confirm(
+        "Kirim ulang surat ini melalui email?"
+      );
 
     if (!confirmed) {
       return;
     }
 
     try {
-      await suratService.sendEmail(id);
+      await suratService.sendEmail(
+        id
+      );
 
       await loadData();
     } catch (requestError) {
-      console.error(requestError);
+      console.error(
+        requestError
+      );
 
       setError(
-        requestError.response?.data?.message ||
+        requestError.response
+          ?.data?.message ||
           "Gagal mengirim email."
       );
     }
@@ -180,6 +277,9 @@ const SuratTerbit = () => {
     {
       key: "letter_number",
       label: "Nomor Surat",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
+
       render: (row) => (
         <div>
           <p className="font-semibold text-rji-black">
@@ -187,16 +287,21 @@ const SuratTerbit = () => {
           </p>
 
           <p className="mt-1 text-xs text-neutral-400">
-            {row.type === "invitation"
+            {row.type ===
+            "invitation"
               ? "Surat Undangan"
               : "Surat Tugas"}
           </p>
         </div>
       ),
     },
+
     {
       key: "recipient_name",
       label: "Penerima",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
+
       render: (row) => (
         <div>
           <p className="font-medium text-rji-black">
@@ -204,40 +309,62 @@ const SuratTerbit = () => {
           </p>
 
           <p className="mt-1 text-xs text-neutral-400">
-            {row.recipient_email || "-"}
+            {row.recipient_email ||
+              "-"}
           </p>
         </div>
       ),
     },
+
     {
       key: "subject",
       label: "Perihal",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
+
       render: (row) => (
         <span className="block max-w-xs truncate">
-          {row.subject || "-"}
+          {row.subject ||
+            "-"}
         </span>
       ),
     },
+
     {
       key: "letter_date",
       label: "Tanggal",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
+
       render: (row) => (
         <span className="whitespace-nowrap">
-          {formatDate(row.letter_date)}
+          {formatDate(
+            row.letter_date
+          )}
         </span>
       ),
     },
+
     {
       key: "status",
       label: "Status",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
+
       render: (row) => (
-        <SuratIssuedStatusBadge status={row.status} />
+        <SuratIssuedStatusBadge
+          status={row.status}
+        />
       ),
     },
+
     {
       key: "verification",
       label: "Verifikasi",
-      render: (row) => (
+      headerClassName:
+        "bg-orange-50 text-rji-black",
+
+      render: () => (
         <div className="flex items-center gap-2">
           <ShieldCheck
             size={16}
@@ -250,10 +377,15 @@ const SuratTerbit = () => {
         </div>
       ),
     },
+
     {
       key: "actions",
       label: "Aksi",
-      headerClassName: "text-right",
+      headerClassName:
+        "bg-orange-50 pl-8 pr-40 text-right text-rji-black",
+      className:
+        "pl-8 pr-12",
+
       render: (row) => (
         <div className="flex justify-end gap-2">
           <Button
@@ -261,7 +393,9 @@ const SuratTerbit = () => {
             size="sm"
             icon={Eye}
             onClick={() =>
-              navigate(`/surat/${row.id}`)
+              navigate(
+                `/surat/${row.id}`
+              )
             }
           >
             Detail
@@ -286,7 +420,9 @@ const SuratTerbit = () => {
             size="sm"
             icon={Mail}
             onClick={() =>
-              handleSendEmail(row.id)
+              handleSendEmail(
+                row.id
+              )
             }
           >
             Email
@@ -320,94 +456,45 @@ const SuratTerbit = () => {
       )}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card padding="p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-neutral-500">
-                Total Surat
-              </p>
+        <StatCard
+          label="Total Surat"
+          value={
+            loading
+              ? "..."
+              : summary.total
+          }
+          description="Seluruh surat tersimpan"
+        />
 
-              <p className="mt-2 text-3xl font-bold text-rji-black">
-                {data.length}
-              </p>
-            </div>
+        <StatCard
+          label="Undangan"
+          value={
+            loading
+              ? "..."
+              : summary.invitation
+          }
+          description="Surat undangan diterbitkan"
+        />
 
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-rji-orange">
-              <FileCheck2 size={21} />
-            </div>
-          </div>
-        </Card>
+        <StatCard
+          label="Surat Tugas"
+          value={
+            loading
+              ? "..."
+              : summary.assignment
+          }
+          description="Surat tugas diterbitkan"
+        />
 
-        <Card padding="p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-neutral-500">
-                Undangan
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-rji-black">
-                {
-                  data.filter(
-                    (item) =>
-                      item.type ===
-                      "invitation"
-                  ).length
-                }
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <FileCheck2 size={21} />
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-neutral-500">
-                Surat Tugas
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-rji-black">
-                {
-                  data.filter(
-                    (item) =>
-                      item.type ===
-                      "assignment"
-                  ).length
-                }
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-              <FileCheck2 size={21} />
-            </div>
-          </div>
-        </Card>
-
-        <Card padding="p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-neutral-500">
-                Terkirim
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-rji-black">
-                {
-                  data.filter(
-                    (item) =>
-                      item.status === "sent"
-                  ).length
-                }
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-50 text-green-600">
-              <Mail size={21} />
-            </div>
-          </div>
-        </Card>
+        <StatCard
+          label="Terkirim"
+          value={
+            loading
+              ? "..."
+              : summary.sent
+          }
+          description="Surat berhasil dikirim"
+        />
       </div>
 
       <Card>
@@ -433,26 +520,36 @@ const SuratTerbit = () => {
                 type="text"
                 value={search}
                 onChange={(event) =>
-                  setSearch(event.target.value)
+                  setSearch(
+                    event.target.value
+                  )
                 }
                 placeholder="Cari nomor, penerima, perihal..."
                 className="h-10 w-full rounded-xl border border-neutral-300 bg-white pl-10 pr-4 text-sm outline-none transition focus:border-rji-orange focus:ring-4 focus:ring-rji-orange/10"
               />
             </div>
 
-            <TableFilter
-              value={type}
-              onChange={setType}
-              options={TYPE_OPTIONS}
-              label="Semua jenis"
-            />
+            <div className="w-full sm:w-52">
+              <TableFilter
+                value={type}
+                onChange={setType}
+                options={
+                  TYPE_OPTIONS
+                }
+                label="Semua jenis"
+              />
+            </div>
 
-            <TableFilter
-              value={status}
-              onChange={setStatus}
-              options={STATUS_OPTIONS}
-              label="Semua status"
-            />
+            <div className="w-full sm:w-52">
+              <TableFilter
+                value={status}
+                onChange={setStatus}
+                options={
+                  STATUS_OPTIONS
+                }
+                label="Semua status"
+              />
+            </div>
           </div>
         </div>
 

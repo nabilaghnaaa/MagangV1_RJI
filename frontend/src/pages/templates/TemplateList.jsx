@@ -15,6 +15,7 @@ import PageContainer from "../../components/layout/PageContainer";
 import PageHeader from "../../components/layout/PageHeader";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
+import StatCard from "../../components/common/StatCard";
 import TableFilter from "../../components/table/TableFilter";
 import DataTable from "../../components/table/DataTable";
 import Badge from "../../components/common/Badge";
@@ -45,32 +46,53 @@ const formatType = (type) => {
 const TemplateList = () => {
   const navigate = useNavigate();
 
-  const [templates, setTemplates] = useState([]);
-  const [type, setType] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [templates, setTemplates] =
+    useState([]);
+
+  const [type, setType] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [actionLoading, setActionLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [successMessage, setSuccessMessage] =
+    useState("");
 
   const loadTemplates = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await templateService.getAll(
-        type
-          ? {
-              type,
-            }
-          : {}
+      const response =
+        await templateService.getAll(
+          type
+            ? {
+                type,
+              }
+            : {}
+        );
+
+      setTemplates(
+        Array.isArray(
+          response?.data
+        )
+          ? response.data
+          : []
+      );
+    } catch (requestError) {
+      console.error(
+        requestError
       );
 
-      setTemplates(response.data || []);
-    } catch (requestError) {
-      console.error(requestError);
-
       setError(
-        requestError.response?.data?.message ||
+        requestError.response
+          ?.data?.message ||
           "Gagal mengambil data template."
       );
     } finally {
@@ -84,41 +106,54 @@ const TemplateList = () => {
 
   const activeCount = useMemo(() => {
     return templates.filter(
-      (template) => template.is_active
-    ).length;
-  }, [templates]);
-
-  const invitationCount = useMemo(() => {
-    return templates.filter(
       (template) =>
-        template.type === "invitation"
+        template.is_active
     ).length;
   }, [templates]);
 
-  const assignmentCount = useMemo(() => {
-    return templates.filter(
-      (template) =>
-        template.type === "assignment"
-    ).length;
-  }, [templates]);
+  const invitationCount =
+    useMemo(() => {
+      return templates.filter(
+        (template) =>
+          template.type ===
+          "invitation"
+      ).length;
+    }, [templates]);
 
-  const handleActivate = async (id) => {
+  const assignmentCount =
+    useMemo(() => {
+      return templates.filter(
+        (template) =>
+          template.type ===
+          "assignment"
+      ).length;
+    }, [templates]);
+
+  const handleActivate = async (
+    id
+  ) => {
     setActionLoading(true);
     setError("");
     setSuccessMessage("");
 
     try {
-      await templateService.activate(id);
+      await templateService.activate(
+        id
+      );
+
       await loadTemplates();
 
       setSuccessMessage(
         "Template berhasil diaktifkan."
       );
     } catch (requestError) {
-      console.error(requestError);
+      console.error(
+        requestError
+      );
 
       setError(
-        requestError.response?.data?.message ||
+        requestError.response
+          ?.data?.message ||
           "Gagal mengaktifkan template."
       );
     } finally {
@@ -126,34 +161,44 @@ const TemplateList = () => {
     }
   };
 
-  const handleDeactivate = async (id) => {
-    setActionLoading(true);
-    setError("");
-    setSuccessMessage("");
+  const handleDeactivate =
+    async (id) => {
+      setActionLoading(true);
+      setError("");
+      setSuccessMessage("");
 
-    try {
-      await templateService.deactivate(id);
-      await loadTemplates();
+      try {
+        await templateService.deactivate(
+          id
+        );
 
-      setSuccessMessage(
-        "Template berhasil dinonaktifkan."
+        await loadTemplates();
+
+        setSuccessMessage(
+          "Template berhasil dinonaktifkan."
+        );
+      } catch (requestError) {
+        console.error(
+          requestError
+        );
+
+        setError(
+          requestError.response
+            ?.data?.message ||
+            "Gagal menonaktifkan template."
+        );
+      } finally {
+        setActionLoading(false);
+      }
+    };
+
+  const handleDelete = async (
+    id
+  ) => {
+    const confirmed =
+      window.confirm(
+        "Hapus template ini?"
       );
-    } catch (requestError) {
-      console.error(requestError);
-
-      setError(
-        requestError.response?.data?.message ||
-          "Gagal menonaktifkan template."
-      );
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    const confirmed = window.confirm(
-      "Hapus template ini?"
-    );
 
     if (!confirmed) {
       return;
@@ -164,17 +209,23 @@ const TemplateList = () => {
     setSuccessMessage("");
 
     try {
-      await templateService.remove(id);
+      await templateService.remove(
+        id
+      );
+
       await loadTemplates();
 
       setSuccessMessage(
         "Template berhasil dihapus."
       );
     } catch (requestError) {
-      console.error(requestError);
+      console.error(
+        requestError
+      );
 
       setError(
-        requestError.response?.data?.message ||
+        requestError.response
+          ?.data?.message ||
           "Gagal menghapus template."
       );
     } finally {
@@ -186,6 +237,9 @@ const TemplateList = () => {
     {
       key: "template",
       label: "Template",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
+
       render: (row) => (
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-rji-orange">
@@ -197,65 +251,101 @@ const TemplateList = () => {
               {row.name}
             </p>
 
-            <p className="mt-1 text-xs text-neutral-400">
-              {row.description || "Tanpa deskripsi"}
+            <p className="mt-1 truncate text-xs text-neutral-400">
+              {row.description ||
+                "Tanpa deskripsi"}
             </p>
           </div>
         </div>
       ),
     },
+
     {
       key: "type",
       label: "Jenis",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
+
       render: (row) => (
         <span className="text-sm font-medium text-neutral-700">
-          {formatType(row.type)}
+          {formatType(
+            row.type
+          )}
         </span>
       ),
     },
+
     {
       key: "signature_type",
       label: "TTD",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
+
       render: (row) => (
         <span className="capitalize text-sm text-neutral-600">
-          {row.signature_type || "manual"}
+          {row.signature_type ||
+            "manual"}
         </span>
       ),
     },
+
     {
       key: "status",
       label: "Status",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
+
       render: (row) =>
         row.is_active ? (
-          <Badge variant="success" dot>
+          <Badge
+            variant="success"
+            dot
+          >
             Aktif
           </Badge>
         ) : (
-          <Badge variant="neutral" dot>
+          <Badge
+            variant="neutral"
+            dot
+          >
             Nonaktif
           </Badge>
         ),
     },
+
     {
       key: "created_at",
       label: "Dibuat",
+      headerClassName:
+        "bg-orange-50 text-rji-black",
+
       render: (row) => (
-        <span className="text-sm text-neutral-600">
+        <span className="whitespace-nowrap text-sm text-neutral-600">
           {row.created_at
             ? new Intl.DateTimeFormat(
                 "id-ID",
                 {
-                  dateStyle: "medium",
+                  dateStyle:
+                    "medium",
                 }
-              ).format(new Date(row.created_at))
+              ).format(
+                new Date(
+                  row.created_at
+                )
+              )
             : "-"}
         </span>
       ),
     },
+
     {
       key: "actions",
       label: "Aksi",
-      headerClassName: "text-right",
+      headerClassName:
+        "bg-orange-50 pl-8 pr-65 text-right text-rji-black",
+      className:
+        "pl-8 pr-12",
+
       render: (row) => (
         <div className="flex justify-end gap-2">
           <Button
@@ -289,9 +379,13 @@ const TemplateList = () => {
               variant="outline"
               size="sm"
               icon={PowerOff}
-              disabled={actionLoading}
+              disabled={
+                actionLoading
+              }
               onClick={() =>
-                handleDeactivate(row.id)
+                handleDeactivate(
+                  row.id
+                )
               }
             >
               Nonaktifkan
@@ -301,9 +395,13 @@ const TemplateList = () => {
               variant="outline"
               size="sm"
               icon={Power}
-              disabled={actionLoading}
+              disabled={
+                actionLoading
+              }
               onClick={() =>
-                handleActivate(row.id)
+                handleActivate(
+                  row.id
+                )
               }
             >
               Aktifkan
@@ -314,9 +412,13 @@ const TemplateList = () => {
             variant="danger"
             size="sm"
             icon={Trash2}
-            disabled={actionLoading}
+            disabled={
+              actionLoading
+            }
             onClick={() =>
-              handleDelete(row.id)
+              handleDelete(
+                row.id
+              )
             }
           >
             Hapus
@@ -335,7 +437,9 @@ const TemplateList = () => {
           <Button
             icon={Plus}
             onClick={() =>
-              navigate("/templates/create")
+              navigate(
+                "/templates/create"
+              )
             }
           >
             Buat Template
@@ -345,7 +449,10 @@ const TemplateList = () => {
 
       {successMessage && (
         <div className="mb-6 flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-700">
-          <CheckCircle2 size={18} />
+          <CheckCircle2
+            size={18}
+          />
+
           {successMessage}
         </div>
       )}
@@ -357,45 +464,45 @@ const TemplateList = () => {
       )}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card padding="p-5">
-          <p className="text-sm text-neutral-500">
-            Total Template
-          </p>
+        <StatCard
+          label="Total Template"
+          value={
+            loading
+              ? "..."
+              : templates.length
+          }
+          description="Semua template surat"
+        />
 
-          <p className="mt-2 text-3xl font-bold text-rji-black">
-            {templates.length}
-          </p>
-        </Card>
+        <StatCard
+          label="Template Aktif"
+          value={
+            loading
+              ? "..."
+              : activeCount
+          }
+          description="Template yang digunakan sistem"
+        />
 
-        <Card padding="p-5">
-          <p className="text-sm text-neutral-500">
-            Template Aktif
-          </p>
+        <StatCard
+          label="Surat Undangan"
+          value={
+            loading
+              ? "..."
+              : invitationCount
+          }
+          description="Template Surat Undangan"
+        />
 
-          <p className="mt-2 text-3xl font-bold text-rji-black">
-            {activeCount}
-          </p>
-        </Card>
-
-        <Card padding="p-5">
-          <p className="text-sm text-neutral-500">
-            Surat Undangan
-          </p>
-
-          <p className="mt-2 text-3xl font-bold text-rji-black">
-            {invitationCount}
-          </p>
-        </Card>
-
-        <Card padding="p-5">
-          <p className="text-sm text-neutral-500">
-            Surat Tugas
-          </p>
-
-          <p className="mt-2 text-3xl font-bold text-rji-black">
-            {assignmentCount}
-          </p>
-        </Card>
+        <StatCard
+          label="Surat Tugas"
+          value={
+            loading
+              ? "..."
+              : assignmentCount
+          }
+          description="Template Surat Tugas"
+        />
       </div>
 
       <Card>
@@ -410,12 +517,14 @@ const TemplateList = () => {
             </p>
           </div>
 
-          <TableFilter
-            value={type}
-            onChange={setType}
-            options={TYPE_OPTIONS}
-            label="Semua jenis"
-          />
+          <div className="w-full sm:w-56">
+            <TableFilter
+              value={type}
+              onChange={setType}
+              options={TYPE_OPTIONS}
+              label="Semua jenis"
+            />
+          </div>
         </div>
 
         <div className="mt-5">

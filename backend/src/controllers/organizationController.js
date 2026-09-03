@@ -2,7 +2,11 @@ const organizationService = require(
   "../services/organizationService"
 );
 
-const get = async (req, res, next) => {
+const get = async (
+  req,
+  res,
+  next
+) => {
   try {
     let setting =
       await organizationService.getActive();
@@ -46,7 +50,31 @@ const update = async (
   }
 };
 
+const uploadLetterheads = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const setting =
+      await organizationService.uploadLetterheads(
+        req.files,
+        req.user.id
+      );
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Kop surat berhasil diperbarui.",
+      data: setting,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   get,
   update,
+  uploadLetterheads,
 };

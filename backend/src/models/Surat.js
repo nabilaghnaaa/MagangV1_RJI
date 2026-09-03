@@ -189,6 +189,16 @@ const Surat = sequelize.define(
       allowNull: true,
     },
 
+    letterhead_top_path: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+    },
+
+    letterhead_bottom_path: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+    },
+
     signed_at: {
       type: DataTypes.DATE,
       allowNull: true,

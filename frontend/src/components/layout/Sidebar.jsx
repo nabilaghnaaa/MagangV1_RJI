@@ -6,7 +6,7 @@ import {
   Settings,
   LogOut,
   X,
-  PenLine,
+  Building2,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
@@ -15,14 +15,26 @@ import SidebarItem from "./SidebarItem";
 import useAuthStore from "../../store/authStore";
 import usePermission from "../../hooks/usePermission";
 
-const Sidebar = ({ mobileOpen, onClose }) => {
+const Sidebar = ({
+  mobileOpen,
+  onClose,
+}) => {
   const navigate = useNavigate();
-  const logout = useAuthStore((state) => state.logout);
-  const { hasPermission } = usePermission();
+
+  const logout = useAuthStore(
+    (state) => state.logout
+  );
+
+  const { hasPermission } =
+    usePermission();
 
   const handleLogout = () => {
     logout();
-    navigate("/login", { replace: true });
+
+    navigate("/login", {
+      replace: true,
+    });
+
     onClose?.();
   };
 
@@ -59,20 +71,29 @@ const Sidebar = ({ mobileOpen, onClose }) => {
     {
       label: "Organisasi",
       to: "/settings/organization",
-      icon: Settings,
+      icon: Building2,
       permission: "settings.view",
     },
     {
       label: "Tanda Tangan",
       to: "/settings/signature",
-      icon: PenLine,
-      permission: "signature.view",
+      icon: FileCheck2,
+      permission: "settings.view",
+    },
+    {
+      label: "Pengaturan Profil",
+      to: "/settings/account",
+      icon: Settings,
+      permission: "settings.view",
     },
   ];
 
-  const visibleMenuItems = menuItems.filter((item) =>
-    hasPermission(item.permission)
-  );
+  const visibleMenuItems =
+    menuItems.filter((item) =>
+      hasPermission(
+        item.permission
+      )
+    );
 
   return (
     <>
@@ -130,19 +151,23 @@ const Sidebar = ({ mobileOpen, onClose }) => {
           </p>
 
           <nav className="mt-3 space-y-1.5">
-            {visibleMenuItems.map((item) => (
-              <div
-                key={item.to}
-                onClick={handleMenuClick}
-              >
-                <SidebarItem
-                  to={item.to}
-                  icon={item.icon}
-                  label={item.label}
-                  end={item.end}
-                />
-              </div>
-            ))}
+            {visibleMenuItems.map(
+              (item) => (
+                <div
+                  key={item.to}
+                  onClick={
+                    handleMenuClick
+                  }
+                >
+                  <SidebarItem
+                    to={item.to}
+                    icon={item.icon}
+                    label={item.label}
+                    end={item.end}
+                  />
+                </div>
+              )
+            )}
           </nav>
         </div>
 

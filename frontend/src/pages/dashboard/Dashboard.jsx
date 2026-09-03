@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   ClipboardList,
-  FileCheck2,
-  FileClock,
   FileText,
   MapPin,
   RefreshCw,
@@ -13,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import PageContainer from "../../components/layout/PageContainer";
 import PageHeader from "../../components/layout/PageHeader";
 import Button from "../../components/common/Button";
-import useAuthStore from "../../store/authStore";
+import StatCard from "../../components/common/StatCard";
 
 import invitationService from "../../services/invitationService";
 import assignmentService from "../../services/assignmentService";
@@ -53,13 +51,20 @@ const getStatusLabel = (status) => {
 
 const getStatusClass = (status) => {
   const classes = {
-    pending: "bg-yellow-50 text-yellow-700",
-    review: "bg-blue-50 text-blue-700",
-    approved: "bg-green-50 text-green-700",
-    rejected: "bg-red-50 text-red-700",
-    issued: "bg-orange-50 text-rji-orange",
-    sent: "bg-green-50 text-green-700",
-    cancelled: "bg-neutral-100 text-neutral-500",
+    pending:
+      "bg-yellow-50 text-yellow-700",
+    review:
+      "bg-blue-50 text-blue-700",
+    approved:
+      "bg-green-50 text-green-700",
+    rejected:
+      "bg-red-50 text-red-700",
+    issued:
+      "bg-orange-50 text-rji-orange",
+    sent:
+      "bg-green-50 text-green-700",
+    cancelled:
+      "bg-neutral-100 text-neutral-500",
   };
 
   return (
@@ -70,10 +75,6 @@ const getStatusClass = (status) => {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-
-  const user = useAuthStore(
-    (state) => state.user
-  );
 
   const [invitations, setInvitations] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -98,19 +99,25 @@ const Dashboard = () => {
       ]);
 
       setInvitations(
-        Array.isArray(invitationResponse?.data)
+        Array.isArray(
+          invitationResponse?.data
+        )
           ? invitationResponse.data
           : []
       );
 
       setAssignments(
-        Array.isArray(assignmentResponse?.data)
+        Array.isArray(
+          assignmentResponse?.data
+        )
           ? assignmentResponse.data
           : []
       );
 
       setSurats(
-        Array.isArray(suratResponse?.data)
+        Array.isArray(
+          suratResponse?.data
+        )
           ? suratResponse.data
           : []
       );
@@ -193,12 +200,14 @@ const Dashboard = () => {
       (a, b) =>
         new Date(
           b.createdAt ||
-            b.created_at
-        ) -
+            b.created_at ||
+            0
+        ).getTime() -
         new Date(
           a.createdAt ||
-            a.created_at
-        )
+            a.created_at ||
+            0
+        ).getTime()
     );
   }, [
     invitations,
@@ -232,7 +241,9 @@ const Dashboard = () => {
       recentPage >
       totalRecentPages
     ) {
-      setRecentPage(totalRecentPages);
+      setRecentPage(
+        totalRecentPages
+      );
     }
   }, [
     recentPage,
@@ -249,41 +260,6 @@ const Dashboard = () => {
 
     setRecentPage(page);
   };
-
-  const statItems = [
-    {
-      label: "Total Pengajuan",
-      value:
-        stats.totalSubmissions,
-      icon: ClipboardList,
-      description:
-        "Seluruh pengajuan masuk",
-    },
-    {
-      label: "Menunggu Review",
-      value:
-        stats.waitingReview,
-      icon: FileClock,
-      description:
-        "Perlu diperiksa admin",
-    },
-    {
-      label: "Surat Diterbitkan",
-      value:
-        stats.publishedSurats,
-      icon: FileCheck2,
-      description:
-        "Surat sudah diterbitkan",
-    },
-    {
-      label: "Total Surat",
-      value:
-        stats.totalSurats,
-      icon: FileText,
-      description:
-        "Seluruh surat tersimpan",
-    },
-  ];
 
   return (
     <PageContainer>
@@ -312,38 +288,45 @@ const Dashboard = () => {
       )}
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {statItems.map((item) => {
-          const Icon = item.icon;
+        <StatCard
+          label="Total Pengajuan"
+          value={
+            loading
+              ? "..."
+              : stats.totalSubmissions
+          }
+          description="Seluruh pengajuan masuk"
+        />
 
-          return (
-            <div
-              key={item.label}
-              className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium text-neutral-500">
-                    {item.label}
-                  </p>
+        <StatCard
+          label="Menunggu Review"
+          value={
+            loading
+              ? "..."
+              : stats.waitingReview
+          }
+          description="Perlu diperiksa admin"
+        />
 
-                  <p className="mt-2 text-3xl font-bold tracking-tight text-rji-black">
-                    {loading
-                      ? "..."
-                      : item.value}
-                  </p>
-                </div>
+        <StatCard
+          label="Surat Diterbitkan"
+          value={
+            loading
+              ? "..."
+              : stats.publishedSurats
+          }
+          description="Surat sudah diterbitkan"
+        />
 
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-rji-orange">
-                  <Icon size={21} />
-                </div>
-              </div>
-
-              <p className="mt-4 text-xs text-neutral-400">
-                {item.description}
-              </p>
-            </div>
-          );
-        })}
+        <StatCard
+          label="Total Surat"
+          value={
+            loading
+              ? "..."
+              : stats.totalSurats
+          }
+          description="Seluruh surat tersimpan"
+        />
       </section>
 
       <section className="mt-6 w-full">
@@ -381,8 +364,7 @@ const Dashboard = () => {
                   </p>
                 </div>
               </div>
-            ) : recentSubmissions.length ===
-              0 ? (
+            ) : recentSubmissions.length === 0 ? (
               <div className="flex min-h-52 items-center justify-center rounded-xl border border-dashed border-neutral-200 bg-neutral-50">
                 <div className="text-center">
                   <ClipboardList

@@ -33,6 +33,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
+import AccountSettings from "../pages/settings/AccountSettings";
 
 const AppRoutes = () => {
   return (
@@ -127,6 +128,11 @@ const AppRoutes = () => {
               <Route
                 path="/settings/signature"
                 element={<Signature />}
+              />
+
+              <Route
+                path="/settings/account"
+                element={<AccountSettings />}
               />
             </Route>
           </Route>

@@ -12,6 +12,7 @@ import PageContainer from "../../components/layout/PageContainer";
 import PageHeader from "../../components/layout/PageHeader";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
+import StatCard from "../../components/common/StatCard";
 import TableSearch from "../../components/table/TableSearch";
 import TableFilter from "../../components/table/TableFilter";
 import DataTable from "../../components/table/DataTable";
@@ -77,18 +78,24 @@ const formatDate = (value) => {
 const normalizeInvitation = (item) => ({
   ...item,
   type: "invitation",
-  applicant_name: item.participant_name,
-  applicant_email: item.participant_email,
+  applicant_name:
+    item.participant_name,
+  applicant_email:
+    item.participant_email,
 });
 
 const normalizeAssignment = (item) => ({
   ...item,
   type: "assignment",
-  applicant_name: item.member_name,
-  applicant_email: item.member_email,
+  applicant_name:
+    item.member_name,
+  applicant_email:
+    item.member_email,
 });
 
-const StatusBadge = ({ status }) => {
+const StatusBadge = ({
+  status,
+}) => {
   const labels = {
     pending: "Menunggu",
     review: "Direview",
@@ -115,7 +122,9 @@ const StatusBadge = ({ status }) => {
           "border-neutral-200 bg-neutral-50 text-neutral-600",
       ].join(" ")}
     >
-      {labels[status] || status || "-"}
+      {labels[status] ||
+        status ||
+        "-"}
     </span>
   );
 };
@@ -123,15 +132,26 @@ const StatusBadge = ({ status }) => {
 const Pengajuan = () => {
   const navigate = useNavigate();
 
-  const [activeType, setActiveType] = useState("all");
-  const [status, setStatus] = useState("");
-  const [search, setSearch] = useState("");
+  const [activeType, setActiveType] =
+    useState("all");
 
-  const [invitations, setInvitations] = useState([]);
-  const [assignments, setAssignments] = useState([]);
+  const [status, setStatus] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [search, setSearch] =
+    useState("");
+
+  const [invitations, setInvitations] =
+    useState([]);
+
+  const [assignments, setAssignments] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   const loadData = async () => {
     setLoading(true);
@@ -148,18 +168,26 @@ const Pengajuan = () => {
         invitationResponse,
         assignmentResponse,
       ] = await Promise.all([
-        invitationService.getAll(params),
-        assignmentService.getAll(params),
+        invitationService.getAll(
+          params
+        ),
+        assignmentService.getAll(
+          params
+        ),
       ]);
 
       setInvitations(
-        Array.isArray(invitationResponse?.data)
+        Array.isArray(
+          invitationResponse?.data
+        )
           ? invitationResponse.data
           : []
       );
 
       setAssignments(
-        Array.isArray(assignmentResponse?.data)
+        Array.isArray(
+          assignmentResponse?.data
+        )
           ? assignmentResponse.data
           : []
       );
@@ -170,7 +198,8 @@ const Pengajuan = () => {
       );
 
       setError(
-        requestError.response?.data?.message ||
+        requestError.response?.data
+          ?.message ||
           "Gagal mengambil data pengajuan."
       );
 
@@ -204,7 +233,8 @@ const Pengajuan = () => {
     if (activeType !== "all") {
       result = result.filter(
         (item) =>
-          item.type === activeType
+          item.type ===
+          activeType
       );
     }
 
@@ -236,21 +266,19 @@ const Pengajuan = () => {
       );
     }
 
-    return result.sort((a, b) => {
-      const firstDate = new Date(
-        a.createdAt ||
-          a.created_at ||
-          0
-      ).getTime();
-
-      const secondDate = new Date(
-        b.createdAt ||
-          b.created_at ||
-          0
-      ).getTime();
-
-      return secondDate - firstDate;
-    });
+    return result.sort(
+      (a, b) =>
+        new Date(
+          b.createdAt ||
+            b.created_at ||
+            0
+        ).getTime() -
+        new Date(
+          a.createdAt ||
+            a.created_at ||
+            0
+        ).getTime()
+    );
   }, [
     invitations,
     assignments,
@@ -266,23 +294,19 @@ const Pengajuan = () => {
 
     return {
       all: all.length,
-      invitation: invitations.length,
-      assignment: assignments.length,
+      invitation:
+        invitations.length,
+      assignment:
+        assignments.length,
       pending: all.filter(
         (item) =>
-          item.status === "pending"
+          item.status ===
+          "pending"
       ).length,
       review: all.filter(
         (item) =>
-          item.status === "review"
-      ).length,
-      approved: all.filter(
-        (item) =>
-          item.status === "approved"
-      ).length,
-      rejected: all.filter(
-        (item) =>
-          item.status === "rejected"
+          item.status ===
+          "review"
       ).length,
     };
   }, [
@@ -290,7 +314,9 @@ const Pengajuan = () => {
     assignments,
   ]);
 
-  const handleOpenDetail = (row) => {
+  const handleOpenDetail = (
+    row
+  ) => {
     navigate(
       `/pengajuan/${row.type}/${row.id}`
     );
@@ -335,7 +361,9 @@ const Pengajuan = () => {
           </div>
 
           <span className="text-sm font-medium text-rji-black">
-            {TYPE_LABELS[row.type] || "-"}
+            {TYPE_LABELS[
+              row.type
+            ] || "-"}
           </span>
         </div>
       ),
@@ -354,7 +382,8 @@ const Pengajuan = () => {
           </p>
 
           <p className="mt-1 truncate text-xs text-neutral-500">
-            {row.location || "-"}
+            {row.location ||
+              "-"}
           </p>
         </div>
       ),
@@ -379,7 +408,8 @@ const Pengajuan = () => {
       key: "status",
       label: "Status",
       headerClassName:
-        "bg-orange-50 text-rji-black",
+        "bg-orange-50 pr-10 text-rji-black",
+      className: "pr-10",
 
       render: (row) => (
         <StatusBadge
@@ -392,16 +422,20 @@ const Pengajuan = () => {
       key: "action",
       label: "Aksi",
       headerClassName:
-        "bg-orange-50 pr-10 text-right text-rji-black",
+        "bg-orange-50 pl-10 pr-20 text-right text-rji-black",
+      className:
+        "pl-10 pr-12",
 
       render: (row) => (
-        <div className="flex justify-end pr-10">
+        <div className="flex justify-end">
           <Button
             variant="outline"
             size="sm"
             icon={Eye}
             onClick={() =>
-              handleOpenDetail(row)
+              handleOpenDetail(
+                row
+              )
             }
           >
             Detail
@@ -431,7 +465,9 @@ const Pengajuan = () => {
       {error && (
         <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
-            <ClipboardList size={17} />
+            <ClipboardList
+              size={17}
+            />
           </div>
 
           <div>
@@ -447,62 +483,32 @@ const Pengajuan = () => {
       )}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card padding="p-5">
-          <p className="text-sm font-medium text-neutral-500">
-            Total Pengajuan
-          </p>
+        <StatCard
+          label="Total Pengajuan"
+          value={summary.all}
+          description="Semua jenis pengajuan"
+        />
 
-          <p className="mt-3 text-3xl font-bold tracking-tight text-rji-black">
-            {summary.all}
-          </p>
+        <StatCard
+          label="Surat Undangan"
+          value={summary.invitation}
+          description="Pengajuan dari peserta"
+        />
 
-          <p className="mt-3 text-xs text-neutral-400">
-            Semua jenis pengajuan
-          </p>
-        </Card>
+        <StatCard
+          label="Surat Tugas"
+          value={summary.assignment}
+          description="Pengajuan dari anggota RJI"
+        />
 
-        <Card padding="p-5">
-          <p className="text-sm font-medium text-neutral-500">
-            Surat Undangan
-          </p>
-
-          <p className="mt-3 text-3xl font-bold tracking-tight text-rji-black">
-            {summary.invitation}
-          </p>
-
-          <p className="mt-3 text-xs text-neutral-400">
-            Pengajuan dari peserta
-          </p>
-        </Card>
-
-        <Card padding="p-5">
-          <p className="text-sm font-medium text-neutral-500">
-            Surat Tugas
-          </p>
-
-          <p className="mt-3 text-3xl font-bold tracking-tight text-rji-black">
-            {summary.assignment}
-          </p>
-
-          <p className="mt-3 text-xs text-neutral-400">
-            Pengajuan dari anggota RJI
-          </p>
-        </Card>
-
-        <Card padding="p-5">
-          <p className="text-sm font-medium text-neutral-500">
-            Perlu Review
-          </p>
-
-          <p className="mt-3 text-3xl font-bold tracking-tight text-rji-black">
-            {summary.pending +
-              summary.review}
-          </p>
-
-          <p className="mt-3 text-xs text-neutral-400">
-            Menunggu pemeriksaan admin
-          </p>
-        </Card>
+        <StatCard
+          label="Perlu Review"
+          value={
+            summary.pending +
+            summary.review
+          }
+          description="Menunggu pemeriksaan admin"
+        />
       </div>
 
       <Card>
@@ -586,7 +592,9 @@ const Pengajuan = () => {
               <div className="w-full sm:w-80 xl:w-80">
                 <TableSearch
                   value={search}
-                  onChange={setSearch}
+                  onChange={
+                    setSearch
+                  }
                   placeholder="Cari pemohon atau kegiatan..."
                 />
               </div>
@@ -594,7 +602,9 @@ const Pengajuan = () => {
               <div className="w-full sm:w-56 xl:w-60">
                 <TableFilter
                   value={status}
-                  onChange={setStatus}
+                  onChange={
+                    setStatus
+                  }
                   options={
                     STATUS_OPTIONS
                   }

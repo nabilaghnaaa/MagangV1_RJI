@@ -19,6 +19,12 @@ const PDF_DIRECTORY = path.resolve(
   "../../storage/surat"
 );
 
+const CSS_PATH = path.join(
+  __dirname,
+  "css",
+  "pdfService.css"
+);
+
 const DEFAULT_LOGO_PATH = path.resolve(
   __dirname,
   "../../../frontend/public/logo-rji.png"
@@ -58,7 +64,9 @@ const fileToDataUri = async (
   }
 
   const buffer =
-    await fs.readFile(filePath);
+    await fs.readFile(
+      filePath
+    );
 
   const extension =
     path.extname(
@@ -77,6 +85,24 @@ const fileToDataUri = async (
     "application/octet-stream";
 
   return `data:${mimeType};base64,${buffer.toString("base64")}`;
+};
+
+const loadPdfCss = async () => {
+  try {
+    return await fs.readFile(
+      CSS_PATH,
+      "utf8"
+    );
+  } catch (error) {
+    console.error(
+      "Gagal membaca CSS PDF:",
+      error
+    );
+
+    throw new Error(
+      "File CSS PDF tidak ditemukan."
+    );
+  }
 };
 
 const escapeHtml = (
@@ -173,36 +199,52 @@ const getSourceData = (
     return {
       letter_number:
         surat.letter_number,
+
       letter_date:
         surat.letter_date,
+
       subject:
         surat.subject,
+
       recipient_name:
         surat.recipient_name,
+
       recipient_email:
         surat.recipient_email,
+
       participant_name:
         invitation.participant_name,
+
       participant_email:
         invitation.participant_email,
+
       participant_phone:
         invitation.participant_phone,
+
       organization:
         invitation.organization,
+
       activity_name:
         invitation.activity_name,
+
       activity_description:
         invitation.activity_description,
+
       activity_date:
         invitation.activity_date,
+
       activity_end_date:
         invitation.activity_end_date,
+
       activity_time:
         invitation.activity_time,
+
       location:
         invitation.location,
+
       invitation_subject:
         invitation.invitation_subject,
+
       notes:
         invitation.notes,
     };
@@ -224,42 +266,61 @@ const getSourceData = (
     return {
       letter_number:
         surat.letter_number,
+
       letter_date:
         surat.letter_date,
+
       subject:
         surat.subject,
+
       recipient_name:
         surat.recipient_name,
+
       recipient_email:
         surat.recipient_email,
+
       member_name:
         assignment.member_name,
+
       member_email:
         assignment.member_email,
+
       member_phone:
         assignment.member_phone,
+
       member_organization:
         assignment.member_organization,
+
       member_role:
         assignment.member_role,
+
       activity_name:
         assignment.activity_name,
+
       activity_description:
         assignment.activity_description,
+
       activity_date:
         assignment.activity_date,
+
       activity_end_date:
         assignment.activity_end_date,
+
       activity_time:
         assignment.activity_time,
+
       location:
         assignment.location,
+
       assignment_subject:
         assignment.assignment_subject,
+
       request_letter_number:
         assignment.request_letter_number,
+
       request_letter_date:
         assignment.request_letter_date,
+
       notes:
         assignment.notes,
     };
@@ -302,17 +363,17 @@ const getSignatureContent = async (
         signatureAbsolutePath
       );
 
-    if (signatureDataUri) {
-      return {
-        html: `<img src="${signatureDataUri}" class="signature-image" alt="Tanda Tangan ${signerName}" />`,
-        signerName,
-        signerPosition,
-      };
+    if (!signatureDataUri) {
+      throw new Error(
+        "File tanda tangan pada surat tidak ditemukan."
+      );
     }
 
-    throw new Error(
-      "File tanda tangan pada surat tidak ditemukan."
-    );
+    return {
+      html: `<img src="${signatureDataUri}" class="signature-image" alt="Tanda Tangan ${signerName}" />`,
+      signerName,
+      signerPosition,
+    };
   }
 
   if (
@@ -328,7 +389,9 @@ const getSignatureContent = async (
       html: `
         <div class="barcode-placeholder">
           <div class="barcode-lines"></div>
-          <div class="barcode-value">${barcodeValue}</div>
+          <div class="barcode-value">
+            ${barcodeValue}
+          </div>
         </div>
       `,
       signerName,
@@ -339,458 +402,395 @@ const getSignatureContent = async (
   return {
     html:
       `<div class="signature-space"></div>`,
+
     signerName,
+
     signerPosition,
   };
 };
 
-const buildDocumentHtml = async ({
-  surat,
-  template,
-  verification,
-}) => {
-  const sourceData =
-    getSourceData(surat);
+const getLetterheadContent =
+  async (surat) => {
+    let topDataUri = null;
+    let bottomDataUri = null;
 
-  const content =
-    replacePlaceholders(
-      template.content,
-      sourceData
-    );
-
-  const footer =
-    replacePlaceholders(
-      template.footer || "",
-      sourceData
-    );
-
-  const logoPath =
-    surat.organization_logo_path
-      ? path.resolve(
+    if (
+      surat.letterhead_top_path
+    ) {
+      const topAbsolutePath =
+        path.resolve(
           __dirname,
           "../..",
-          surat.organization_logo_path
-        )
-      : process.env.RJI_LOGO_PATH ||
-        DEFAULT_LOGO_PATH;
+          surat.letterhead_top_path
+        );
 
-  const logoDataUri =
-    await fileToDataUri(
-      logoPath
-    );
+      topDataUri =
+        await fileToDataUri(
+          topAbsolutePath
+        );
 
-  let qrDataUri = null;
+      if (!topDataUri) {
+        throw new Error(
+          "File kop surat bagian atas tidak ditemukan."
+        );
+      }
+    }
 
-  if (
-    verification?.qr_path
-  ) {
-    const qrAbsolutePath =
-      path.resolve(
-        __dirname,
-        "../..",
-        verification.qr_path
-      );
+    if (
+      surat.letterhead_bottom_path
+    ) {
+      const bottomAbsolutePath =
+        path.resolve(
+          __dirname,
+          "../..",
+          surat.letterhead_bottom_path
+        );
 
-    qrDataUri =
+      bottomDataUri =
+        await fileToDataUri(
+          bottomAbsolutePath
+        );
+
+      if (!bottomDataUri) {
+        throw new Error(
+          "File kop surat bagian bawah tidak ditemukan."
+        );
+      }
+    }
+
+    return {
+      topDataUri,
+      bottomDataUri,
+    };
+  };
+
+const buildFallbackHeader =
+  async (surat) => {
+    const logoPath =
+      surat.organization_logo_path
+        ? path.resolve(
+            __dirname,
+            "../..",
+            surat.organization_logo_path
+          )
+        : process.env.RJI_LOGO_PATH ||
+          DEFAULT_LOGO_PATH;
+
+    const logoDataUri =
       await fileToDataUri(
-        qrAbsolutePath
+        logoPath
       );
-  }
 
-  const signatureContent =
-    await getSignatureContent(
-      surat
-    );
+    const organizationName =
+      escapeHtml(
+        surat.organization_name ||
+        "Relawan Jurnal Indonesia"
+      );
 
-  const organizationName =
-    escapeHtml(
-      surat.organization_name ||
-      "Relawan Jurnal Indonesia"
-    );
+    const organizationShortName =
+      escapeHtml(
+        surat.organization_short_name ||
+        "RJI"
+      );
 
-  const organizationShortName =
-    escapeHtml(
-      surat.organization_short_name ||
-      "RJI"
-    );
+    if (logoDataUri) {
+      return `
+        <header class="fallback-letter-head">
+          <img
+            src="${logoDataUri}"
+            class="fallback-logo"
+            alt="Logo ${organizationShortName}"
+          />
 
-  const organizationAddress =
-    escapeHtml(
-      surat.organization_address ||
-      ""
-    );
+          <div>
+            <div class="organization-name">
+              ${organizationName}
+            </div>
 
-  const organizationEmail =
-    escapeHtml(
-      surat.organization_email ||
-      ""
-    );
-
-  const organizationPhone =
-    escapeHtml(
-      surat.organization_phone ||
-      ""
-    );
-
-  const organizationWebsite =
-    escapeHtml(
-      surat.organization_website ||
-      ""
-    );
-
-  const organizationContact = [
-    organizationAddress,
-    organizationEmail,
-    organizationPhone,
-    organizationWebsite,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-  const logoHtml =
-    logoDataUri
-      ? `<img src="${logoDataUri}" class="logo" alt="Logo ${organizationShortName}" />`
-      : `<div class="logo-placeholder">${organizationShortName}</div>`;
-
-  const qrHtml =
-    qrDataUri
-      ? `
-        <div class="verification-box">
-          <img src="${qrDataUri}" class="qr-code" alt="QR Code Verifikasi" />
-          <div class="verification-text">Scan untuk memverifikasi surat</div>
-        </div>
-      `
-      : `
-        <div class="verification-box verification-box-empty"></div>
+            <div class="organization-short-name">
+              ${organizationShortName}
+            </div>
+          </div>
+        </header>
       `;
+    }
 
-  const letterNumber =
-    escapeHtml(
-      surat.letter_number
-    );
+    return `
+      <header class="fallback-letter-head">
+        <div class="fallback-logo-placeholder">
+          ${organizationShortName}
+        </div>
 
-  const recipientName =
-    escapeHtml(
-      surat.recipient_name
-    );
+        <div>
+          <div class="organization-name">
+            ${organizationName}
+          </div>
 
-  const subject =
-    escapeHtml(
-      surat.subject || "-"
-    );
+          <div class="organization-short-name">
+            ${organizationShortName}
+          </div>
+        </div>
+      </header>
+    `;
+  };
 
-  const verificationText =
-    verification?.verification_url
-      ? `Verifikasi: ${escapeHtml(verification.verification_url)}`
-      : "Data verifikasi belum tersedia.";
+const buildDocumentHtml =
+  async ({
+    surat,
+    template,
+    verification,
+  }) => {
+    const sourceData =
+      getSourceData(
+        surat
+      );
 
-  return `
-    <!DOCTYPE html>
-    <html lang="id">
-      <head>
-        <meta charset="UTF-8" />
-        <title>${letterNumber}</title>
+    const content =
+      replacePlaceholders(
+        template.content,
+        sourceData
+      );
 
-        <style>
-          @page {
-            size: A4;
-            margin: 18mm 20mm 18mm 20mm;
-          }
+    const footer =
+      replacePlaceholders(
+        template.footer || "",
+        sourceData
+      );
 
-          * {
-            box-sizing: border-box;
-          }
+    const signatureContent =
+      await getSignatureContent(
+        surat
+      );
 
-          html,
-          body {
-            margin: 0;
-            padding: 0;
-            background: #ffffff;
-            color: #171717;
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 11pt;
-            line-height: 1.65;
-          }
+    const letterhead =
+      await getLetterheadContent(
+        surat
+      );
 
-          body {
-            width: 100%;
-          }
+    const css =
+      await loadPdfCss();
 
-          .document {
-            width: 100%;
-            min-height: 257mm;
-          }
+    const letterNumber =
+      escapeHtml(
+        surat.letter_number
+      );
 
-          .letter-head {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #f7941d;
-          }
+    const recipientName =
+      escapeHtml(
+        surat.recipient_name
+      );
 
-          .logo {
-            width: 68px;
-            height: 68px;
-            object-fit: contain;
-          }
+    const subject =
+      escapeHtml(
+        surat.subject || "-"
+      );
 
-          .logo-placeholder {
-            width: 68px;
-            height: 68px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            background: #f7941d;
-            color: #ffffff;
-            font-weight: 800;
-            font-size: 20px;
-          }
+    const organizationShortName =
+      escapeHtml(
+        surat.organization_short_name ||
+        "RJI"
+      );
 
-          .organization-name {
-            font-size: 15pt;
-            font-weight: 700;
-            line-height: 1.25;
-          }
+    const letterheadTopHtml =
+      letterhead.topDataUri
+        ? `
+          <img
+            src="${letterhead.topDataUri}"
+            class="letterhead-image letterhead-top"
+            alt="Kop Surat Atas"
+          />
+        `
+        : await buildFallbackHeader(
+            surat
+          );
 
-          .organization-short-name {
-            margin-top: 2px;
-            color: #555555;
-            font-size: 10pt;
-            font-weight: 600;
-          }
+    const letterheadBottomHtml =
+      letterhead.bottomDataUri
+        ? `
+          <img
+            src="${letterhead.bottomDataUri}"
+            class="letterhead-image letterhead-bottom"
+            alt="Kop Surat Bawah"
+          />
+        `
+        : "";
 
-          .organization-contact {
-            margin-top: 4px;
-            color: #777777;
-            font-size: 8pt;
-            line-height: 1.4;
-          }
-
-          .document-content {
-            margin-top: 25px;
-          }
-
-          .letter-meta {
-            margin-bottom: 22px;
-          }
-
-          .letter-meta table {
-            width: 100%;
-            border-collapse: collapse;
-          }
-
-          .letter-meta td {
-            padding: 2px 0;
-            vertical-align: top;
-          }
-
-          .letter-meta td:first-child {
-            width: 90px;
-            font-weight: 600;
-          }
-
-          .document-content p {
-            margin-top: 0;
-            margin-bottom: 12px;
-          }
-
-          .footer-content {
-            margin-top: 20px;
-          }
-
-          .signature-section {
-            margin-top: 42px;
-            display: flex;
-            justify-content: flex-end;
-          }
-
-          .signature {
-            width: 210px;
-            text-align: center;
-          }
-
-          .signature-title {
-            margin-bottom: 8px;
-          }
-
-          .signature-space {
-            height: 75px;
-          }
-
-          .signature-image {
-            display: block;
-            width: 145px;
-            height: 70px;
-            object-fit: contain;
-            margin: 2px auto 4px;
-          }
-
-          .signature-name {
-            margin-top: 4px;
-            font-weight: 700;
-            text-decoration: underline;
-          }
-
-          .signature-position {
-            margin-top: 2px;
-            color: #555555;
-            font-size: 9pt;
-          }
-
-          .barcode-placeholder {
-            width: 170px;
-            height: 80px;
-            margin: 0 auto 2px;
-            text-align: center;
-          }
-
-          .barcode-lines {
-            width: 145px;
-            height: 52px;
-            margin: 0 auto;
-            background: repeating-linear-gradient(
-              90deg,
-              #171717 0px,
-              #171717 2px,
-              #ffffff 2px,
-              #ffffff 4px,
-              #171717 4px,
-              #171717 5px,
-              #ffffff 5px,
-              #ffffff 8px
-            );
-          }
-
-          .barcode-value {
-            margin-top: 4px;
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 6.5pt;
-            line-height: 1.2;
-            word-break: break-all;
-            color: #555555;
-          }
-
-          .verification-section {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 20px;
-            margin-top: 30px;
-            padding-top: 12px;
-            border-top: 1px solid #e5e5e5;
-          }
-
-          .verification-info {
-            max-width: 70%;
-            font-size: 8.5pt;
-            color: #777777;
-            overflow-wrap: anywhere;
-          }
-
-          .verification-box {
-            width: 100px;
-            text-align: center;
-          }
-
-          .verification-box-empty {
-            min-height: 84px;
-          }
-
-          .qr-code {
-            display: block;
-            width: 84px;
-            height: 84px;
-            margin: 0 auto;
-          }
-
-          .verification-text {
-            margin-top: 5px;
-            font-size: 7.5pt;
-            line-height: 1.3;
-            color: #777777;
-          }
-
-          .avoid-break {
-            page-break-inside: avoid;
-          }
-        </style>
-      </head>
-
-      <body>
-        <div class="document">
-          <header class="letter-head">
-            ${logoHtml}
-
-            <div>
-              <div class="organization-name">${organizationName}</div>
-              <div class="organization-short-name">${organizationShortName}</div>
-
-              ${
-                organizationContact
-                  ? `<div class="organization-contact">${organizationContact}</div>`
-                  : ""
-              }
-            </div>
-          </header>
-
-          <main class="document-content">
-            <div class="letter-meta">
-              <table>
-                <tr>
-                  <td>Nomor</td>
-                  <td>: ${letterNumber}</td>
-                </tr>
-
-                <tr>
-                  <td>Tanggal</td>
-                  <td>: ${escapeHtml(formatDate(surat.letter_date))}</td>
-                </tr>
-
-                <tr>
-                  <td>Perihal</td>
-                  <td>: ${subject}</td>
-                </tr>
-              </table>
-            </div>
-
-            <p>Yth. <strong>${recipientName}</strong></p>
-
-            ${content}
-
+    const qrHtml =
+      verification?.qr_path
+        ? `
+          <div class="verification-box">
             ${
-              footer
-                ? `<div class="footer-content">${footer}</div>`
-                : ""
+              await fileToDataUri(
+                path.resolve(
+                  __dirname,
+                  "../..",
+                  verification.qr_path
+                )
+              )
             }
 
-            <div class="signature-section avoid-break">
-              <div class="signature">
-                <div class="signature-title">Hormat kami,</div>
-                ${signatureContent.html}
-                <div class="signature-name">${signatureContent.signerName}</div>
-                <div class="signature-position">${signatureContent.signerPosition}</div>
-              </div>
+            <div class="verification-text">
+              Scan untuk memverifikasi surat
             </div>
+          </div>
+        `
+        : `
+          <div class="verification-box verification-box-empty"></div>
+        `;
 
-            <div class="verification-section avoid-break">
-              <div class="verification-info">
-                Dokumen ini diterbitkan melalui Sistem Persuratan ${organizationShortName}.
-                <br />
-                Nomor Surat: ${letterNumber}
-                <br />
-                ${verificationText}
+    let verifiedQrDataUri = null;
+
+    if (
+      verification?.qr_path
+    ) {
+      const qrAbsolutePath =
+        path.resolve(
+          __dirname,
+          "../..",
+          verification.qr_path
+        );
+
+      verifiedQrDataUri =
+        await fileToDataUri(
+          qrAbsolutePath
+        );
+    }
+
+    const finalQrHtml =
+      verifiedQrDataUri
+        ? `
+          <div class="verification-box">
+            <img
+              src="${verifiedQrDataUri}"
+              class="qr-code"
+              alt="QR Code Verifikasi"
+            />
+
+            <div class="verification-text">
+              Scan untuk memverifikasi surat
+            </div>
+          </div>
+        `
+        : `
+          <div class="verification-box verification-box-empty"></div>
+        `;
+
+    const verificationText =
+      verification?.verification_url
+        ? `Verifikasi: ${escapeHtml(
+            verification.verification_url
+          )}`
+        : "Data verifikasi belum tersedia.";
+
+    return `
+      <!DOCTYPE html>
+
+      <html lang="id">
+        <head>
+          <meta charset="UTF-8" />
+
+          <title>
+            ${letterNumber}
+          </title>
+
+          <style>
+            ${css}
+          </style>
+        </head>
+
+        <body>
+          <div class="document">
+            ${letterheadTopHtml}
+
+            <main class="document-body">
+              <div class="letter-meta">
+                <table>
+                  <tr>
+                    <td>Nomor</td>
+                    <td>
+                      : ${letterNumber}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>Tanggal</td>
+                    <td>
+                      : ${escapeHtml(
+                        formatDate(
+                          surat.letter_date
+                        )
+                      )}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>Perihal</td>
+                    <td>
+                      : ${subject}
+                    </td>
+                  </tr>
+                </table>
               </div>
 
-              ${qrHtml}
-            </div>
-          </main>
-        </div>
-      </body>
-    </html>
-  `;
-};
+              <p>
+                Yth.
+                <strong>
+                  ${recipientName}
+                </strong>
+              </p>
+
+              <div class="template-content">
+                ${content}
+              </div>
+
+              ${
+                footer
+                  ? `
+                    <div class="footer-content">
+                      ${footer}
+                    </div>
+                  `
+                  : ""
+              }
+
+              <div class="signature-section avoid-break">
+                <div class="signature">
+                  <div class="signature-title">
+                    Hormat kami,
+                  </div>
+
+                  ${signatureContent.html}
+
+                  <div class="signature-name">
+                    ${signatureContent.signerName}
+                  </div>
+
+                  <div class="signature-position">
+                    ${signatureContent.signerPosition}
+                  </div>
+                </div>
+              </div>
+
+              <div class="verification-section avoid-break">
+                <div class="verification-info">
+                  Dokumen ini diterbitkan melalui Sistem Persuratan ${organizationShortName}.
+                  <br />
+                  Nomor Surat:
+                  ${letterNumber}
+                  <br />
+                  ${verificationText}
+                </div>
+
+                ${finalQrHtml}
+              </div>
+            </main>
+
+            ${letterheadBottomHtml}
+          </div>
+        </body>
+      </html>
+    `;
+  };
 
 const generatePdf = async (
   suratId
@@ -856,16 +856,22 @@ const generatePdf = async (
 
   let template;
 
-  if (surat.template_content) {
+  if (
+    surat.template_content
+  ) {
     template = {
       id:
         surat.template_id,
+
       name:
         surat.template_name,
+
       content:
         surat.template_content,
+
       footer:
-        surat.template_footer || "",
+        surat.template_footer ||
+        "",
     };
   } else {
     template =
@@ -913,6 +919,12 @@ const generatePdf = async (
     const page =
       await browser.newPage();
 
+    await page.setViewport({
+      width: 1900,
+      height: 1200,
+      deviceScaleFactor: 1,
+    });
+
     await page.setContent(
       html,
       {
@@ -926,12 +938,6 @@ const generatePdf = async (
       format: "A4",
       printBackground: true,
       preferCSSPageSize: true,
-      margin: {
-        top: "18mm",
-        right: "20mm",
-        bottom: "18mm",
-        left: "20mm",
-      },
     });
   } finally {
     await browser.close();
@@ -941,6 +947,7 @@ const generatePdf = async (
     {
       pdf_path:
         relativePath,
+
       pdf_generated_at:
         new Date(),
     },
@@ -975,9 +982,12 @@ const generatePdf = async (
   return {
     surat:
       updatedSurat,
+
     fileName,
+
     filePath:
       relativePath,
+
     absolutePath,
   };
 };

@@ -60,7 +60,10 @@ const DataTable = ({
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className="px-5 py-4 text-sm text-neutral-700"
+                    className={[
+                      "px-5 py-4 text-sm text-neutral-700",
+                      column.className || "",
+                    ].join(" ")}
                   >
                     {column.render
                       ? column.render(
