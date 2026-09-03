@@ -302,39 +302,34 @@ const createFromInvitation =
       invitation.participant_email;
 
     return Surat.create(
-      {
-        type: "invitation",
-
-        invitation_id:
-          invitation.id,
-
-        assignment_id:
-          null,
-
-        letter_number:
-          letterNumber,
-
-        letter_date:
-          letterDate,
-
-        subject,
-
-        recipient_name:
-          recipientName,
-
-        recipient_email:
-          recipientEmail,
-
-        status: "issued",
-
-        email_status:
-          "pending",
-      },
-
-      {
-        transaction,
-      }
-    );
+    {
+      type: "invitation",
+      invitation_id: invitation.id,
+      assignment_id: null,
+      letter_number:
+        invitation.letter_number ||
+        await generateLetterNumber(
+          "invitation",
+          transaction
+        ),
+      letter_date:
+        invitation.letter_date ||
+        new Date(),
+      subject:
+        invitation.invitation_subject ||
+        invitation.activity_name,
+      recipient_name:
+        invitation.recipient_name ||
+        invitation.participant_name,
+      recipient_email:
+        invitation.participant_email,
+      status: "issued",
+      email_status: "pending",
+    },
+    {
+      transaction,
+    }
+  );
   };
 
 /*

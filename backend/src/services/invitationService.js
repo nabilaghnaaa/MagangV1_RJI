@@ -1,3 +1,7 @@
+const {
+  Op,
+} = require("sequelize");
+
 const suratService =
   require("./suratService");
 
@@ -28,15 +32,79 @@ const ALLOWED_UPDATE_FIELDS = [
   "admin_notes",
 ];
 
+const ROMAN_MONTHS = [
+  "I",
+  "II",
+  "III",
+  "IV",
+  "V",
+  "VI",
+  "VII",
+  "VIII",
+  "IX",
+  "X",
+  "XI",
+  "XII",
+];
+
+const generateInvitationLetterNumber =
+  async () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+
+    const lastInvitation =
+      await SuratInvitation.findOne({
+        where: {
+          letter_number: {
+            [Op.ne]: null,
+          },
+        },
+        order: [
+          ["id", "DESC"],
+        ],
+      });
+
+    let sequence = 1;
+
+    if (
+      lastInvitation?.letter_number
+    ) {
+      const match =
+        lastInvitation.letter_number.match(
+          /^D\.10\/(\d{4})\/RJI\/[IVXLCDM]+\/\d{4}$/
+        );
+
+      if (match) {
+        sequence =
+          Number(match[1]) + 1;
+      }
+    }
+
+    const number =
+      String(sequence).padStart(
+        4,
+        "0"
+      );
+
+    return `D.10/${number}/RJI/${ROMAN_MONTHS[month - 1]}/${year}`;
+  };
+
 const create = async (
   data = {}
 ) => {
   const requiredFields = [
     "participant_name",
     "participant_email",
+    "recipient_name",
+    "recipient_position",
+    "recipient_organization",
     "activity_name",
+    "activity_description",
     "activity_date",
+    "activity_time",
     "location",
+    "activity_address",
   ];
 
   for (const field of requiredFields) {
@@ -50,6 +118,9 @@ const create = async (
       );
     }
   }
+
+  const letterNumber =
+    await generateInvitationLetterNumber();
 
   const invitation =
     await SuratInvitation.create({
@@ -68,23 +139,19 @@ const create = async (
         null,
 
       recipient_name:
-        data.recipient_name ||
-        null,
+        data.recipient_name,
 
       recipient_position:
-        data.recipient_position ||
-        null,
+        data.recipient_position,
 
       recipient_organization:
-        data.recipient_organization ||
-        null,
+        data.recipient_organization,
 
       activity_name:
         data.activity_name,
 
       activity_description:
-        data.activity_description ||
-        null,
+        data.activity_description,
 
       activity_date:
         data.activity_date,
@@ -94,28 +161,30 @@ const create = async (
         null,
 
       activity_time:
-        data.activity_time ||
-        null,
+        data.activity_time,
 
       location:
         data.location,
 
       activity_address:
-        data.activity_address ||
-        null,
+        data.activity_address,
 
       invitation_subject:
+        data.invitation_subject ||
         data.activity_name,
 
-      letter_number: null,
+      letter_number:
+        letterNumber,
 
-      letter_date: null,
+      letter_date:
+        new Date(),
 
       notes:
         data.notes ||
         null,
 
-      status: "pending",
+      status:
+        "pending",
     });
 
   return invitation;
@@ -344,9 +413,11 @@ const reject = async (
   }
 
   await invitation.update({
-    status: "rejected",
+    status:
+      "rejected",
 
-    reviewed_by: adminId,
+    reviewed_by:
+      adminId,
 
     reviewed_at:
       new Date(),
@@ -369,4 +440,5 @@ module.exports = {
   review,
   approve,
   reject,
+  generateInvitationLetterNumber,
 };
