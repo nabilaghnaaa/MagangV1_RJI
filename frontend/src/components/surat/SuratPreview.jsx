@@ -1,20 +1,50 @@
-const formatDate = (value) => {
+const formatDate = (
+  value
+) => {
   if (!value) {
     return "-";
   }
 
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
     return "-";
   }
 
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "long",
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    "id-ID",
+    {
+      dateStyle:
+        "long",
+    }
+  ).format(date);
 };
 
-const SuratPreview = ({ data }) => {
+const getOrganizationCity = (
+  address
+) => {
+  if (!address) {
+    return "Yogyakarta";
+  }
+
+  const parts =
+    String(address)
+      .split(",");
+
+  return (
+    parts[0]?.trim() ||
+    "Yogyakarta"
+  );
+};
+
+const SuratPreview = ({
+  data,
+}) => {
   if (!data) {
     return (
       <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-8 text-center text-sm text-neutral-500">
@@ -23,60 +53,58 @@ const SuratPreview = ({ data }) => {
     );
   }
 
-  const previewData = data.data || {};
+  const preview =
+    data.data || {};
+
+  const organizationName =
+    preview.organization_name ||
+    "Pengurus Pusat Relawan Jurnal Indonesia";
 
   const signerName =
-    previewData.signer_name ||
+    preview.signer_name ||
     "Dr. Arbain, Sp.Pd., M.Pd.";
 
   const signerPosition =
-    previewData.signer_position ||
+    preview.signer_position ||
     "Ketua RJI";
 
-  const organizationName =
-    previewData.organization_name ||
-    "Pengurus Pusat Relawan Jurnal Indonesia";
-
-  const signatureMode =
-    previewData.signature_mode ||
-    "scan";
-
-  const signatureDataUri =
-    previewData.signature_data_uri ||
-    null;
-
-  const letterheadTopDataUri =
-    previewData.letterhead_top_data_uri ||
-    null;
-
-  const letterheadBottomDataUri =
-    previewData.letterhead_bottom_data_uri ||
-    null;
-
   const recipientName =
-    previewData.recipient_name ||
+    preview.recipient_name ||
     "-";
 
   const recipientPosition =
-    previewData.recipient_position ||
+    preview.recipient_position ||
     "";
 
   const recipientOrganization =
-    previewData.recipient_organization ||
+    preview.recipient_organization ||
     "";
 
   const letterNumber =
-    previewData.letter_number ||
+    preview.letter_number ||
     "-";
 
   const letterDate =
-    previewData.letter_date
-      ? formatDate(previewData.letter_date)
-      : "-";
+    formatDate(
+      preview.letter_date
+    );
 
-  const subject =
-    previewData.subject ||
-    "-";
+  const organizationCity =
+    getOrganizationCity(
+      preview.organization_address
+    );
+
+  const signatureDataUri =
+    preview.signature_data_uri ||
+    null;
+
+  const topLetterhead =
+    preview.letterhead_top_data_uri ||
+    null;
+
+  const bottomLetterhead =
+    preview.letterhead_bottom_data_uri ||
+    null;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
@@ -87,7 +115,7 @@ const SuratPreview = ({ data }) => {
           </p>
 
           <p className="mt-1 text-xs text-neutral-500">
-            Preview berdasarkan data pengajuan saat ini.
+            Preview berdasarkan data pengajuan saat ini. Preview tidak menerbitkan surat.
           </p>
         </div>
 
@@ -98,39 +126,40 @@ const SuratPreview = ({ data }) => {
 
       <div className="overflow-auto bg-neutral-100 p-4 sm:p-8">
         <div className="mx-auto w-full max-w-[794px] bg-white shadow-sm">
-          {letterheadTopDataUri ? (
+          {topLetterhead ? (
             <img
-              src={letterheadTopDataUri}
+              src={topLetterhead}
               alt="Kop Surat Atas"
-              className="block h-auto w-full object-fill"
+              className="block w-full"
             />
           ) : (
             <div className="px-10 pt-10 sm:px-16">
-              <div className="flex items-center gap-4 border-b-2 border-rji-orange pb-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-rji-orange text-xl font-black text-white">
-                  R
-                </div>
+              <div className="border-b-2 border-rji-orange pb-4">
+                <p className="text-lg font-bold text-rji-black">
+                  RELAWAN JURNAL INDONESIA
+                </p>
 
-                <div>
-                  <p className="text-lg font-bold text-rji-black">
-                    RELAWAN JURNAL INDONESIA
-                  </p>
-
-                  <p className="text-xs text-neutral-500">
-                    Sistem Persuratan
-                  </p>
-                </div>
+                <p className="text-xs text-neutral-500">
+                  Sistem Persuratan
+                </p>
               </div>
             </div>
           )}
 
           <div className="px-10 py-10 sm:px-16 sm:py-12">
             <div className="text-sm leading-7 text-neutral-700">
-              <div className="mb-8">
-                <table className="text-sm leading-6">
+              <div className="mb-5 text-right">
+                <p>
+                  {organizationCity},{" "}
+                  {letterDate}
+                </p>
+              </div>
+
+              <div className="mb-7">
+                <table className="border-collapse text-sm leading-6">
                   <tbody>
                     <tr>
-                      <td className="w-[85px] pr-4 align-top">
+                      <td className="w-[80px] align-top pr-4">
                         Nomor
                       </td>
 
@@ -144,21 +173,7 @@ const SuratPreview = ({ data }) => {
                     </tr>
 
                     <tr>
-                      <td className="pr-4 align-top">
-                        Tanggal
-                      </td>
-
-                      <td className="align-top">
-                        :
-                      </td>
-
-                      <td className="pl-2">
-                        {letterDate}
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td className="pr-4 align-top">
+                      <td className="align-top pr-4">
                         Perihal
                       </td>
 
@@ -167,19 +182,20 @@ const SuratPreview = ({ data }) => {
                       </td>
 
                       <td className="pl-2 font-medium text-rji-black">
-                        {subject}
+                        {preview.subject ||
+                          "-"}
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              <div className="mb-8">
+              <div className="mb-7">
                 <p>
                   Kepada Yth.
                 </p>
 
-                <p className="font-semibold text-rji-black">
+                <p className="font-bold text-rji-black">
                   {recipientName}
                 </p>
 
@@ -201,24 +217,15 @@ const SuratPreview = ({ data }) => {
               </div>
 
               <div
-                className="prose prose-sm max-w-none text-neutral-700 prose-p:my-3 prose-p:leading-7 prose-strong:font-bold"
+                className="text-justify"
                 dangerouslySetInnerHTML={{
                   __html:
-                    data.content || "",
+                    data.content ||
+                    "",
                 }}
               />
 
-              {data.footer && (
-                <div
-                  className="prose prose-sm mt-3 max-w-none text-neutral-700 prose-p:my-3 prose-p:leading-7 prose-strong:font-bold"
-                  dangerouslySetInnerHTML={{
-                    __html:
-                      data.footer,
-                  }}
-                />
-              )}
-
-              <div className="mt-12 ml-auto w-full max-w-[300px] text-center text-sm leading-6 text-neutral-700">
+              <div className="mt-10 ml-auto w-full max-w-[300px] text-center text-sm leading-6 text-neutral-700">
                 <p>
                   Hormat kami,
                 </p>
@@ -228,18 +235,14 @@ const SuratPreview = ({ data }) => {
                 </p>
 
                 <div className="mt-3 flex h-[105px] items-center justify-center">
-                  {signatureMode ===
-                    "scan" &&
-                  signatureDataUri ? (
+                  {signatureDataUri ? (
                     <img
-                      src={
-                        signatureDataUri
-                      }
+                      src={signatureDataUri}
                       alt="Tanda Tangan"
-                      className="max-h-[95px] max-w-[190px] object-contain"
+                      className="max-h-[100px] max-w-[200px] object-contain"
                     />
                   ) : (
-                    <div className="h-[95px]" />
+                    <div className="h-[100px]" />
                   )}
                 </div>
 
@@ -252,17 +255,17 @@ const SuratPreview = ({ data }) => {
                 </p>
               </div>
 
-              <div className="mt-12 border-t border-neutral-200 pt-4 text-xs leading-5 text-neutral-400">
+              <div className="mt-10 border-t border-neutral-200 pt-4 text-xs leading-5 text-neutral-400">
                 Dokumen ini masih berupa preview dan belum diterbitkan.
               </div>
             </div>
           </div>
 
-          {letterheadBottomDataUri && (
+          {bottomLetterhead && (
             <img
-              src={letterheadBottomDataUri}
+              src={bottomLetterhead}
               alt="Kop Surat Bawah"
-              className="block h-auto w-full object-fill"
+              className="block w-full"
             />
           )}
         </div>

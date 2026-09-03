@@ -110,6 +110,16 @@ const SuratInvitation = sequelize.define(
       allowNull: true,
     },
 
+    signer_name: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+
+    signer_position: {
+      type: DataTypes.STRING(150),
+      allowNull: true,
+    },
+
     notes: {
       type: DataTypes.TEXT,
       allowNull: true,

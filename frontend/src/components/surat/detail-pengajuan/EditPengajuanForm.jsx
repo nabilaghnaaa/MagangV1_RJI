@@ -35,7 +35,10 @@ const EditPengajuanForm = ({
             <Input
               label="Nama Penerima"
               name="recipient_name"
-              value={form.recipient_name || ""}
+              value={
+                form.recipient_name ||
+                ""
+              }
               onChange={onChange}
               required
             />
@@ -43,7 +46,10 @@ const EditPengajuanForm = ({
             <Input
               label="Jabatan Penerima"
               name="recipient_position"
-              value={form.recipient_position || ""}
+              value={
+                form.recipient_position ||
+                ""
+              }
               onChange={onChange}
               required
             />
@@ -52,8 +58,12 @@ const EditPengajuanForm = ({
               <Input
                 label="Instansi Penerima"
                 name="recipient_organization"
-                value={form.recipient_organization || ""}
+                value={
+                  form.recipient_organization ||
+                  ""
+                }
                 onChange={onChange}
+                required
               />
             </div>
           </div>
@@ -61,7 +71,9 @@ const EditPengajuanForm = ({
       )}
 
       <SectionTitle>
-        {isInvitation ? "Data Peserta" : "Data Anggota RJI"}
+        {isInvitation
+          ? "Data Peserta"
+          : "Data Anggota RJI"}
       </SectionTitle>
 
       <div className="grid gap-5 sm:grid-cols-2">
@@ -70,7 +82,10 @@ const EditPengajuanForm = ({
             <Input
               label="Nama Peserta"
               name="participant_name"
-              value={form.participant_name || ""}
+              value={
+                form.participant_name ||
+                ""
+              }
               onChange={onChange}
               required
             />
@@ -79,7 +94,10 @@ const EditPengajuanForm = ({
               label="Email Peserta"
               name="participant_email"
               type="email"
-              value={form.participant_email || ""}
+              value={
+                form.participant_email ||
+                ""
+              }
               onChange={onChange}
               required
             />
@@ -87,14 +105,20 @@ const EditPengajuanForm = ({
             <Input
               label="Nomor Telepon"
               name="participant_phone"
-              value={form.participant_phone || ""}
+              value={
+                form.participant_phone ||
+                ""
+              }
               onChange={onChange}
             />
 
             <Input
               label="Institusi / Organisasi"
               name="organization"
-              value={form.organization || ""}
+              value={
+                form.organization ||
+                ""
+              }
               onChange={onChange}
             />
           </>
@@ -103,7 +127,10 @@ const EditPengajuanForm = ({
             <Input
               label="Nama Anggota"
               name="member_name"
-              value={form.member_name || ""}
+              value={
+                form.member_name ||
+                ""
+              }
               onChange={onChange}
               required
             />
@@ -112,7 +139,10 @@ const EditPengajuanForm = ({
               label="Email Anggota"
               name="member_email"
               type="email"
-              value={form.member_email || ""}
+              value={
+                form.member_email ||
+                ""
+              }
               onChange={onChange}
               required
             />
@@ -120,21 +150,30 @@ const EditPengajuanForm = ({
             <Input
               label="Nomor Telepon"
               name="member_phone"
-              value={form.member_phone || ""}
+              value={
+                form.member_phone ||
+                ""
+              }
               onChange={onChange}
             />
 
             <Input
               label="Organisasi"
               name="member_organization"
-              value={form.member_organization || ""}
+              value={
+                form.member_organization ||
+                ""
+              }
               onChange={onChange}
             />
 
             <Input
               label="Peran"
               name="member_role"
-              value={form.member_role || ""}
+              value={
+                form.member_role ||
+                ""
+              }
               onChange={onChange}
               required
             />
@@ -150,30 +189,84 @@ const EditPengajuanForm = ({
         <Input
           label="Nomor Surat"
           name="letter_number"
-          value={form.letter_number || ""}
+          value={
+            form.letter_number ||
+            ""
+          }
           onChange={onChange}
-          placeholder="Contoh: D.10/0077/RJI/IX/2026"
+          placeholder="D.10/0077/RJI/I/2026"
+          required
         />
 
         <Input
           label="Tanggal Surat"
           name="letter_date"
           type="date"
-          value={form.letter_date || ""}
+          value={
+            form.letter_date ||
+            ""
+          }
           onChange={onChange}
+          required
         />
 
         <div className="sm:col-span-2">
           <Input
-            label={isInvitation ? "Perihal Undangan" : "Perihal Surat Tugas"}
-            name={isInvitation ? "invitation_subject" : "assignment_subject"}
-            value={isInvitation ? form.invitation_subject || "" : form.assignment_subject || ""}
+            label={
+              isInvitation
+                ? "Perihal Undangan"
+                : "Perihal Surat Tugas"
+            }
+            name={
+              isInvitation
+                ? "invitation_subject"
+                : "assignment_subject"
+            }
+            value={
+              isInvitation
+                ? form.invitation_subject ||
+                  ""
+                : form.assignment_subject ||
+                  ""
+            }
             onChange={onChange}
             placeholder="Perihal surat"
             required
           />
         </div>
       </div>
+
+      {isInvitation && (
+        <>
+          <SectionTitle>
+            Penanda Tangan
+          </SectionTitle>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Input
+              label="Nama Penanda Tangan"
+              name="signer_name"
+              value={
+                form.signer_name ||
+                "Dr. Arbain, Sp.Pd., M.Pd."
+              }
+              onChange={onChange}
+              required
+            />
+
+            <Input
+              label="Jabatan Penanda Tangan"
+              name="signer_position"
+              value={
+                form.signer_position ||
+                "Ketua RJI"
+              }
+              onChange={onChange}
+              required
+            />
+          </div>
+        </>
+      )}
 
       <SectionTitle>
         Detail Kegiatan
@@ -184,7 +277,10 @@ const EditPengajuanForm = ({
           <Input
             label="Nama Kegiatan"
             name="activity_name"
-            value={form.activity_name || ""}
+            value={
+              form.activity_name ||
+              ""
+            }
             onChange={onChange}
             required
           />
@@ -194,7 +290,10 @@ const EditPengajuanForm = ({
           label="Tanggal Mulai"
           name="activity_date"
           type="date"
-          value={form.activity_date || ""}
+          value={
+            form.activity_date ||
+            ""
+          }
           onChange={onChange}
           required
         />
@@ -203,22 +302,32 @@ const EditPengajuanForm = ({
           label="Tanggal Selesai"
           name="activity_end_date"
           type="date"
-          value={form.activity_end_date || ""}
+          value={
+            form.activity_end_date ||
+            ""
+          }
           onChange={onChange}
         />
 
         <Input
           label="Pukul"
           name="activity_time"
-          value={form.activity_time || ""}
+          value={
+            form.activity_time ||
+            ""
+          }
           onChange={onChange}
           placeholder="09.00 - 12.00 WIB"
+          required
         />
 
         <Input
           label="Tempat"
           name="location"
-          value={form.location || ""}
+          value={
+            form.location ||
+            ""
+          }
           onChange={onChange}
           required
         />
@@ -228,9 +337,13 @@ const EditPengajuanForm = ({
             <Textarea
               label="Alamat Kegiatan"
               name="activity_address"
-              value={form.activity_address || ""}
+              value={
+                form.activity_address ||
+                ""
+              }
               onChange={onChange}
               rows={3}
+              required
             />
           </div>
         )}
@@ -239,9 +352,13 @@ const EditPengajuanForm = ({
           <Textarea
             label="Deskripsi / Tujuan Kegiatan"
             name="activity_description"
-            value={form.activity_description || ""}
+            value={
+              form.activity_description ||
+              ""
+            }
             onChange={onChange}
             rows={5}
+            required
           />
         </div>
       </div>
@@ -256,7 +373,10 @@ const EditPengajuanForm = ({
             <Input
               label="Nomor Surat Permohonan"
               name="request_letter_number"
-              value={form.request_letter_number || ""}
+              value={
+                form.request_letter_number ||
+                ""
+              }
               onChange={onChange}
             />
 
@@ -264,7 +384,10 @@ const EditPengajuanForm = ({
               label="Tanggal Surat Permohonan"
               name="request_letter_date"
               type="date"
-              value={form.request_letter_date || ""}
+              value={
+                form.request_letter_date ||
+                ""
+              }
               onChange={onChange}
             />
           </div>
@@ -279,7 +402,10 @@ const EditPengajuanForm = ({
         <Textarea
           label="Catatan Pemohon"
           name="notes"
-          value={form.notes || ""}
+          value={
+            form.notes ||
+            ""
+          }
           onChange={onChange}
           rows={3}
         />
@@ -287,7 +413,10 @@ const EditPengajuanForm = ({
         <Textarea
           label="Catatan Admin"
           name="admin_notes"
-          value={form.admin_notes || ""}
+          value={
+            form.admin_notes ||
+            ""
+          }
           onChange={onChange}
           rows={3}
           placeholder="Catatan pemeriksaan admin..."

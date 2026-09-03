@@ -2,12 +2,12 @@ const {
   Op,
 } = require("sequelize");
 
-const suratService =
-  require("./suratService");
+const suratService = require("./suratService");
 
 const {
   SuratInvitation,
   User,
+  SignatureSetting,
 } = require("../models");
 
 const ALLOWED_UPDATE_FIELDS = [
@@ -28,6 +28,8 @@ const ALLOWED_UPDATE_FIELDS = [
   "invitation_subject",
   "letter_number",
   "letter_date",
+  "signer_name",
+  "signer_position",
   "notes",
   "admin_notes",
 ];
@@ -47,52 +49,61 @@ const ROMAN_MONTHS = [
   "XII",
 ];
 
-const generateInvitationLetterNumber =
-  async () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
+const generateInvitationLetterNumber = async () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
 
-    const lastInvitation =
-      await SuratInvitation.findOne({
-        where: {
-          letter_number: {
-            [Op.ne]: null,
-          },
-        },
-        order: [
-          ["id", "DESC"],
-        ],
-      });
+  const lastInvitation = await SuratInvitation.findOne({
+    where: {
+      letter_number: {
+        [Op.ne]: null,
+      },
+    },
+    order: [
+      ["id", "DESC"],
+    ],
+  });
 
-    let sequence = 1;
+  let sequence = 1;
 
-    if (
-      lastInvitation?.letter_number
-    ) {
-      const match =
-        lastInvitation.letter_number.match(
-          /^D\.10\/(\d{4})\/RJI\/[IVXLCDM]+\/\d{4}$/
-        );
+  if (lastInvitation?.letter_number) {
+    const match = lastInvitation.letter_number.match(
+      /^D\.10\/(\d+)\/RJI\/[IVXLCDM]+\/\d{4}$/
+    );
 
-      if (match) {
-        sequence =
-          Number(match[1]) + 1;
-      }
+    if (match) {
+      sequence = Number(match[1]) + 1;
     }
+  }
 
-    const number =
-      String(sequence).padStart(
-        4,
-        "0"
-      );
+  const number = String(sequence).padStart(4, "0");
 
-    return `D.10/${number}/RJI/${ROMAN_MONTHS[month - 1]}/${year}`;
+  return `D.10/${number}/RJI/${ROMAN_MONTHS[month - 1]}/${year}`;
+};
+
+const getDefaultSignature = async () => {
+  const signatureSetting = await SignatureSetting.findOne({
+    where: {
+      is_active: true,
+    },
+    order: [
+      ["id", "DESC"],
+    ],
+  });
+
+  return {
+    signer_name:
+      signatureSetting?.signer_name ||
+      "Dr. Arbain, Sp.Pd., M.Pd.",
+
+    signer_position:
+      signatureSetting?.signer_position ||
+      "Ketua RJI",
   };
+};
 
-const create = async (
-  data = {}
-) => {
+const create = async (data = {}) => {
   const requiredFields = [
     "participant_name",
     "participant_email",
@@ -121,6 +132,11 @@ const create = async (
 
   const letterNumber =
     await generateInvitationLetterNumber();
+
+  const letterDate = new Date();
+
+  const defaultSignature =
+    await getDefaultSignature();
 
   const invitation =
     await SuratInvitation.create({
@@ -177,7 +193,13 @@ const create = async (
         letterNumber,
 
       letter_date:
-        new Date(),
+        letterDate,
+
+      signer_name:
+        defaultSignature.signer_name,
+
+      signer_position:
+        defaultSignature.signer_position,
 
       notes:
         data.notes ||
@@ -190,9 +212,7 @@ const create = async (
   return invitation;
 };
 
-const getAll = async (
-  query = {}
-) => {
+const getAll = async (query = {}) => {
   const where = {};
 
   if (query.status) {
@@ -221,9 +241,7 @@ const getAll = async (
   });
 };
 
-const getById = async (
-  id
-) => {
+const getById = async (id) => {
   const invitation =
     await SuratInvitation.findByPk(
       id,
@@ -256,9 +274,7 @@ const update = async (
   data = {}
 ) => {
   const invitation =
-    await SuratInvitation.findByPk(
-      id
-    );
+    await SuratInvitation.findByPk(id);
 
   if (!invitation) {
     throw new Error(
@@ -294,9 +310,11 @@ const update = async (
   }
 
   if (
-    updateData.activity_name !==
-      undefined &&
-    !updateData.invitation_subject
+    updateData.activity_name !== undefined &&
+    !String(
+      updateData.invitation_subject ||
+      ""
+    ).trim()
   ) {
     updateData.invitation_subject =
       updateData.activity_name;
@@ -315,9 +333,7 @@ const review = async (
   data = {}
 ) => {
   const invitation =
-    await SuratInvitation.findByPk(
-      id
-    );
+    await SuratInvitation.findByPk(id);
 
   if (!invitation) {
     throw new Error(
@@ -339,8 +355,12 @@ const review = async (
   }
 
   const updateData = {
-    status: "review",
-    reviewed_by: adminId,
+    status:
+      "review",
+
+    reviewed_by:
+      adminId,
+
     reviewed_at:
       new Date(),
   };
@@ -380,9 +400,7 @@ const reject = async (
   data = {}
 ) => {
   const invitation =
-    await SuratInvitation.findByPk(
-      id
-    );
+    await SuratInvitation.findByPk(id);
 
   if (!invitation) {
     throw new Error(

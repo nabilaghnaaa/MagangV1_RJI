@@ -58,7 +58,9 @@ const fileToDataUri = async (
 ) => {
   if (
     !filePath ||
-    !(await fileExists(filePath))
+    !(await fileExists(
+      filePath
+    ))
   ) {
     return null;
   }
@@ -74,10 +76,17 @@ const fileToDataUri = async (
     ).toLowerCase();
 
   const mimeTypes = {
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".webp": "image/webp",
+    ".png":
+      "image/png",
+
+    ".jpg":
+      "image/jpeg",
+
+    ".jpeg":
+      "image/jpeg",
+
+    ".webp":
+      "image/webp",
   };
 
   const mimeType =
@@ -89,23 +98,24 @@ const fileToDataUri = async (
   )}`;
 };
 
-const loadPdfCss = async () => {
-  try {
-    return await fs.readFile(
-      CSS_PATH,
-      "utf8"
-    );
-  } catch (error) {
-    console.error(
-      "Gagal membaca CSS PDF:",
-      error
-    );
+const loadPdfCss =
+  async () => {
+    try {
+      return await fs.readFile(
+        CSS_PATH,
+        "utf8"
+      );
+    } catch (error) {
+      console.error(
+        "Gagal membaca CSS PDF:",
+        error
+      );
 
-    throw new Error(
-      "File CSS PDF tidak ditemukan."
-    );
-  }
-};
+      throw new Error(
+        "File CSS PDF tidak ditemukan."
+      );
+    }
+  };
 
 const escapeHtml = (
   value
@@ -154,7 +164,8 @@ const formatDate = (
   return new Intl.DateTimeFormat(
     "id-ID",
     {
-      dateStyle: "long",
+      dateStyle:
+        "long",
     }
   ).format(date);
 };
@@ -180,21 +191,28 @@ const getDayName = (
   return new Intl.DateTimeFormat(
     "id-ID",
     {
-      weekday: "long",
+      weekday:
+        "long",
     }
   ).format(date);
 };
 
 const getActiveTemplate =
-  async (type) => {
+  async (
+    type
+  ) => {
     const template =
       await SuratTemplate.findOne({
         where: {
           type,
-          is_active: true,
+          is_active:
+            true,
         },
         order: [
-          ["created_at", "DESC"],
+          [
+            "created_at",
+            "DESC",
+          ],
         ],
       });
 
@@ -259,10 +277,20 @@ const getSourceData = (
         invitation.organization,
 
       organization_name:
-        surat.organization_name,
+        surat.organization_name ||
+        "Pengurus Pusat Relawan Jurnal Indonesia",
 
       organization_short_name:
-        surat.organization_short_name,
+        surat.organization_short_name ||
+        "RJI",
+
+      organization_phone:
+        surat.organization_phone ||
+        "",
+
+      confirmation_phone:
+        surat.organization_phone ||
+        "",
 
       activity_name:
         invitation.activity_name,
@@ -293,14 +321,15 @@ const getSourceData = (
       invitation_subject:
         invitation.invitation_subject,
 
-      confirmation_phone:
-        surat.organization_phone,
-
       signer_name:
-        surat.signature_name,
+        surat.signature_name ||
+        invitation.signer_name ||
+        "Dr. Arbain, Sp.Pd., M.Pd.",
 
       signer_position:
-        surat.signature_position,
+        surat.signature_position ||
+        invitation.signer_position ||
+        "Ketua RJI",
 
       notes:
         invitation.notes,
@@ -384,19 +413,24 @@ const getSourceData = (
         assignment.request_letter_date,
 
       confirmation_phone:
-        surat.organization_phone,
+        surat.organization_phone ||
+        "",
 
       organization_name:
-        surat.organization_name,
+        surat.organization_name ||
+        "Pengurus Pusat Relawan Jurnal Indonesia",
 
       organization_short_name:
-        surat.organization_short_name,
+        surat.organization_short_name ||
+        "RJI",
 
       signer_name:
-        surat.signature_name,
+        surat.signature_name ||
+        "Dr. Arbain, Sp.Pd., M.Pd.",
 
       signer_position:
-        surat.signature_position,
+        surat.signature_position ||
+        "Ketua RJI",
 
       notes:
         assignment.notes,
@@ -409,7 +443,9 @@ const getSourceData = (
 };
 
 const getSignatureContent =
-  async (surat) => {
+  async (
+    surat
+  ) => {
     const signerName =
       escapeHtml(
         surat.signature_name ||
@@ -453,7 +489,9 @@ const getSignatureContent =
             alt="Tanda Tangan ${signerName}"
           />
         `,
+
         signerName,
+
         signerPosition,
       };
     }
@@ -477,7 +515,9 @@ const getSignatureContent =
             </div>
           </div>
         `,
+
         signerName,
+
         signerPosition,
       };
     }
@@ -493,9 +533,14 @@ const getSignatureContent =
   };
 
 const getLetterheadContent =
-  async (surat) => {
-    let topDataUri = null;
-    let bottomDataUri = null;
+  async (
+    surat
+  ) => {
+    let topDataUri =
+      null;
+
+    let bottomDataUri =
+      null;
 
     if (
       surat.letterhead_top_path
@@ -543,12 +588,15 @@ const getLetterheadContent =
 
     return {
       topDataUri,
+
       bottomDataUri,
     };
   };
 
 const buildFallbackHeader =
-  async (surat) => {
+  async (
+    surat
+  ) => {
     const logoPath =
       surat.organization_logo_path
         ? path.resolve(
@@ -634,12 +682,6 @@ const buildDocumentHtml =
         sourceData
       );
 
-    const footer =
-      replacePlaceholders(
-        template.footer || "",
-        sourceData
-      );
-
     const signatureContent =
       await getSignatureContent(
         surat
@@ -657,6 +699,13 @@ const buildDocumentHtml =
       escapeHtml(
         surat.letter_number ||
         "Belum tersedia"
+      );
+
+    const letterDate =
+      escapeHtml(
+        formatDate(
+          surat.letter_date
+        )
       );
 
     const recipientName =
@@ -695,6 +744,20 @@ const buildDocumentHtml =
         "RJI"
       );
 
+    const organizationAddress =
+      String(
+        surat.organization_address ||
+        "Yogyakarta"
+      );
+
+    const organizationCity =
+      escapeHtml(
+        organizationAddress
+          .split(",")[0]
+          .trim() ||
+        "Yogyakarta"
+      );
+
     const letterheadTopHtml =
       letterhead.topDataUri
         ? `
@@ -719,7 +782,8 @@ const buildDocumentHtml =
         `
         : "";
 
-    let verifiedQrDataUri = null;
+    let verifiedQrDataUri =
+      null;
 
     if (
       verification?.qr_path
@@ -786,31 +850,22 @@ const buildDocumentHtml =
 
             <main class="document-body">
 
+              <div class="letter-date">
+                ${organizationCity},
+                ${letterDate}
+              </div>
+
               <div class="letter-meta">
                 <table>
                   <tr>
                     <td>Nomor</td>
-
                     <td>
                       : ${letterNumber}
                     </td>
                   </tr>
 
                   <tr>
-                    <td>Tanggal</td>
-
-                    <td>
-                      : ${escapeHtml(
-                        formatDate(
-                          surat.letter_date
-                        )
-                      )}
-                    </td>
-                  </tr>
-
-                  <tr>
                     <td>Perihal</td>
-
                     <td>
                       : ${subject}
                     </td>
@@ -856,18 +911,7 @@ const buildDocumentHtml =
                 ${content}
               </div>
 
-              ${
-                footer
-                  ? `
-                    <div class="footer-content">
-                      ${footer}
-                    </div>
-                  `
-                  : ""
-              }
-
               <div class="signature-section avoid-break">
-
                 <div class="signature">
 
                   <div class="signature-title">
@@ -889,13 +933,11 @@ const buildDocumentHtml =
                   </div>
 
                 </div>
-
               </div>
 
               <div class="verification-section avoid-break">
 
                 <div class="verification-info">
-
                   Dokumen ini diterbitkan melalui Sistem Persuratan
                   ${organizationShortName}.
 
@@ -907,7 +949,6 @@ const buildDocumentHtml =
                   <br />
 
                   ${verificationText}
-
                 </div>
 
                 ${finalQrHtml}
@@ -935,16 +976,27 @@ const generatePdf = async (
       {
         include: [
           {
-            model: SuratInvitation,
-            as: "invitation",
+            model:
+              SuratInvitation,
+
+            as:
+              "invitation",
           },
+
           {
-            model: SuratAssignment,
-            as: "assignment",
+            model:
+              SuratAssignment,
+
+            as:
+              "assignment",
           },
+
           {
-            model: Verification,
-            as: "verification",
+            model:
+              Verification,
+
+            as:
+              "verification",
           },
         ],
       }
@@ -974,12 +1026,15 @@ const generatePdf = async (
     ) {
       return {
         surat,
+
         fileName:
           path.basename(
             surat.pdf_path
           ),
+
         filePath:
           surat.pdf_path,
+
         absolutePath:
           existingAbsolutePath,
       };
@@ -1002,7 +1057,6 @@ const generatePdf = async (
         surat.template_content,
 
       footer:
-        surat.template_footer ||
         "",
     };
   } else {
@@ -1044,6 +1098,7 @@ const generatePdf = async (
   const browser =
     await puppeteer.launch({
       headless: true,
+
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -1069,10 +1124,17 @@ const generatePdf = async (
     );
 
     await page.pdf({
-      path: absolutePath,
-      format: "A4",
-      printBackground: true,
-      preferCSSPageSize: true,
+      path:
+        absolutePath,
+
+      format:
+        "A4",
+
+      printBackground:
+        true,
+
+      preferCSSPageSize:
+        true,
     });
   } finally {
     await browser.close();
@@ -1088,7 +1150,8 @@ const generatePdf = async (
     },
     {
       where: {
-        id: suratId,
+        id:
+          suratId,
       },
     }
   );
@@ -1099,16 +1162,27 @@ const generatePdf = async (
       {
         include: [
           {
-            model: SuratInvitation,
-            as: "invitation",
+            model:
+              SuratInvitation,
+
+            as:
+              "invitation",
           },
+
           {
-            model: SuratAssignment,
-            as: "assignment",
+            model:
+              SuratAssignment,
+
+            as:
+              "assignment",
           },
+
           {
-            model: Verification,
-            as: "verification",
+            model:
+              Verification,
+
+            as:
+              "verification",
           },
         ],
       }
