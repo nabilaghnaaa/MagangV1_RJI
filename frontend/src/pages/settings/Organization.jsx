@@ -2,10 +2,8 @@ import {
   Building2,
   CheckCircle2,
   ImagePlus,
-  Mail,
   Save,
   Upload,
-  Phone,
   XCircle,
 } from "lucide-react";
 import {
@@ -19,8 +17,16 @@ import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import Textarea from "../../components/common/Textarea";
+import Modal from "../../components/common/Modal";
 
 import organizationService from "../../services/organizationService";
+
+import {
+  LETTERHEAD_WIDTH,
+  LETTERHEAD_HEIGHT,
+  resizeLetterhead,
+  getImageDimensions,
+} from "../../utils/letterhead";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
@@ -51,109 +57,6 @@ const getStorageUrl = (
   }
 
   return `${STORAGE_URL}/${filePath}`;
-};
-
-const readImageDimensions = (
-  file
-) => {
-  return new Promise(
-    (resolve, reject) => {
-      const reader =
-        new FileReader();
-
-      reader.onload = () => {
-        const image =
-          new window.Image();
-
-        image.onload = () => {
-          resolve({
-            width:
-              image.naturalWidth,
-            height:
-              image.naturalHeight,
-          });
-        };
-
-        image.onerror = () => {
-          reject(
-            new Error(
-              "Gambar tidak dapat dibaca."
-            )
-          );
-        };
-
-        image.src =
-          reader.result;
-      };
-
-      reader.onerror = () => {
-        reject(
-          new Error(
-            "File gambar tidak dapat dibaca."
-          )
-        );
-      };
-
-      reader.readAsDataURL(
-        file
-      );
-    }
-  );
-};
-
-const validateLetterhead = async (
-  file
-) => {
-  if (!file) {
-    throw new Error(
-      "File belum dipilih."
-    );
-  }
-
-  const allowedTypes = [
-    "image/png",
-    "image/jpeg",
-  ];
-
-  if (
-    !allowedTypes.includes(
-      file.type
-    )
-  ) {
-    throw new Error(
-      "Format kop hanya boleh PNG atau JPG/JPEG."
-    );
-  }
-
-  const maxFileSize =
-    5 * 1024 * 1024;
-
-  if (
-    file.size >
-    maxFileSize
-  ) {
-    throw new Error(
-      "Ukuran file maksimal 5 MB."
-    );
-  }
-
-  const dimensions =
-    await readImageDimensions(
-      file
-    );
-
-  if (
-    dimensions.width !==
-      1900 ||
-    dimensions.height !==
-      200
-  ) {
-    throw new Error(
-      `Ukuran gambar harus tepat 1900 × 200 px. File yang dipilih berukuran ${dimensions.width} × ${dimensions.height} px.`
-    );
-  }
-
-  return dimensions;
 };
 
 const Organization = () => {
@@ -191,6 +94,16 @@ const Organization = () => {
   ] = useState("");
 
   const [
+    topOriginalSize,
+    setTopOriginalSize,
+  ] = useState(null);
+
+  const [
+    bottomOriginalSize,
+    setBottomOriginalSize,
+  ] = useState(null);
+
+  const [
     savedTopPath,
     setSavedTopPath,
   ] = useState("");
@@ -225,6 +138,11 @@ const Organization = () => {
     setSuccess,
   ] = useState("");
 
+  const [
+    successModalOpen,
+    setSuccessModalOpen,
+  ] = useState(false);
+
   const loadData =
     async () => {
       setLoading(true);
@@ -247,16 +165,20 @@ const Organization = () => {
             "",
 
           address:
-            data.address || "",
+            data.address ||
+            "",
 
           email:
-            data.email || "",
+            data.email ||
+            "",
 
           phone:
-            data.phone || "",
+            data.phone ||
+            "",
 
           website:
-            data.website || "",
+            data.website ||
+            "",
         });
 
         setSavedTopPath(
@@ -272,7 +194,7 @@ const Organization = () => {
         requestError
       ) {
         console.error(
-          "Gagal mengambil organisasi:",
+          "Gagal mengambil data organisasi:",
           requestError
         );
 
@@ -304,7 +226,10 @@ const Organization = () => {
         );
       }
     };
-  }, []);
+  }, [
+    topPreview,
+    bottomPreview,
+  ]);
 
   const handleChange = (
     event
@@ -341,8 +266,6 @@ const Organization = () => {
         setSuccess(
           "Konfigurasi organisasi berhasil disimpan."
         );
-
-        await loadData();
       } catch (
         requestError
       ) {
@@ -369,6 +292,8 @@ const Organization = () => {
       const file =
         event.target.files?.[0];
 
+      event.target.value = "";
+
       if (!file) {
         return;
       }
@@ -377,13 +302,19 @@ const Organization = () => {
       setSuccess("");
 
       try {
-        await validateLetterhead(
-          file
-        );
+        const originalDimensions =
+          await getImageDimensions(
+            file
+          );
+
+        const resizedFile =
+          await resizeLetterhead(
+            file
+          );
 
         const previewUrl =
           URL.createObjectURL(
-            file
+            resizedFile
           );
 
         if (
@@ -396,37 +327,50 @@ const Organization = () => {
           }
 
           setLetterheadTop(
-            file
+            resizedFile
           );
 
           setTopPreview(
             previewUrl
           );
-        } else {
-          if (
-            bottomPreview
-          ) {
-            URL.revokeObjectURL(
-              bottomPreview
-            );
-          }
 
-          setLetterheadBottom(
-            file
+          setTopOriginalSize(
+            originalDimensions
           );
 
-          setBottomPreview(
-            previewUrl
+          return;
+        }
+
+        if (
+          bottomPreview
+        ) {
+          URL.revokeObjectURL(
+            bottomPreview
           );
         }
+
+        setLetterheadBottom(
+          resizedFile
+        );
+
+        setBottomPreview(
+          previewUrl
+        );
+
+        setBottomOriginalSize(
+          originalDimensions
+        );
       } catch (
         validationError
       ) {
-        event.target.value =
-          "";
+        console.error(
+          "Gagal memproses kop:",
+          validationError
+        );
 
         setError(
-          validationError.message
+          validationError.message ||
+            "Gagal memproses gambar kop surat."
         );
       }
     };
@@ -458,7 +402,8 @@ const Organization = () => {
         if (letterheadTop) {
           formData.append(
             "letterhead_top",
-            letterheadTop
+            letterheadTop,
+            letterheadTop.name
           );
         }
 
@@ -467,9 +412,34 @@ const Organization = () => {
         ) {
           formData.append(
             "letterhead_bottom",
-            letterheadBottom
+            letterheadBottom,
+            letterheadBottom.name
           );
         }
+
+        console.log(
+          "Kop atas:",
+          letterheadTop
+        );
+
+        console.log(
+          "Kop bawah:",
+          letterheadBottom
+        );
+
+        console.log(
+          "FormData letterhead_top:",
+          formData.get(
+            "letterhead_top"
+          )
+        );
+
+        console.log(
+          "FormData letterhead_bottom:",
+          formData.get(
+            "letterhead_bottom"
+          )
+        );
 
         const response =
           await organizationService.uploadLetterheads(
@@ -479,23 +449,17 @@ const Organization = () => {
         const data =
           response?.data || {};
 
-        setSavedTopPath(
-          data.letterhead_top_path ||
-            ""
-        );
-
-        setSavedBottomPath(
-          data.letterhead_bottom_path ||
-            ""
-        );
-
-        if (topPreview) {
+        if (
+          topPreview
+        ) {
           URL.revokeObjectURL(
             topPreview
           );
         }
 
-        if (bottomPreview) {
+        if (
+          bottomPreview
+        ) {
           URL.revokeObjectURL(
             bottomPreview
           );
@@ -510,10 +474,33 @@ const Organization = () => {
         );
 
         setTopPreview("");
+
         setBottomPreview("");
 
+        setTopOriginalSize(
+          null
+        );
+
+        setBottomOriginalSize(
+          null
+        );
+
+        setSavedTopPath(
+          data.letterhead_top_path ||
+            ""
+        );
+
+        setSavedBottomPath(
+          data.letterhead_bottom_path ||
+            ""
+        );
+
         setSuccess(
-          "Kop surat berhasil disimpan."
+          "Kop surat berhasil diperbarui."
+        );
+
+        setSuccessModalOpen(
+          true
         );
 
         await loadData();
@@ -521,7 +508,7 @@ const Organization = () => {
         requestError
       ) {
         console.error(
-          "Gagal upload kop surat:",
+          "Gagal menyimpan kop surat:",
           requestError
         );
 
@@ -544,6 +531,7 @@ const Organization = () => {
       savedPath,
       selectedFile,
       preview,
+      originalSize,
       inputId,
       onChange,
     }) => {
@@ -577,7 +565,7 @@ const Organization = () => {
                 <img
                   src={imageSource}
                   alt={title}
-                  className="block h-auto w-full object-contain"
+                  className="block h-auto w-full object-fill"
                 />
               </div>
             ) : (
@@ -593,7 +581,7 @@ const Organization = () => {
                   </p>
 
                   <p className="mt-1 text-xs text-neutral-400">
-                    Upload gambar 1900 × 200 px.
+                    Pilih gambar kop untuk digunakan.
                   </p>
                 </div>
               </div>
@@ -601,14 +589,24 @@ const Organization = () => {
           </div>
 
           {selectedFile && (
-            <div className="mt-3 rounded-xl bg-orange-50 px-3.5 py-3">
-              <p className="truncate text-xs font-semibold text-orange-800">
-                File dipilih
+            <div className="mt-3 rounded-xl bg-green-50 px-3.5 py-3">
+              <p className="text-xs font-semibold text-green-800">
+                File siap disimpan
               </p>
 
-              <p className="mt-1 truncate text-xs text-orange-700">
+              <p className="mt-1 truncate text-xs text-green-700">
                 {selectedFile.name}
               </p>
+
+              {originalSize && (
+                <p className="mt-1 text-[11px] text-green-600">
+                  {originalSize.width} ×{" "}
+                  {originalSize.height} px
+                  {" → "}
+                  {LETTERHEAD_WIDTH} ×{" "}
+                  {LETTERHEAD_HEIGHT} px
+                </p>
+              )}
             </div>
           )}
 
@@ -619,9 +617,8 @@ const Organization = () => {
             >
               <Upload size={16} />
 
-              {selectedFile
-                ? "Ganti Kop"
-                : savedPath
+              {selectedFile ||
+              savedPath
                 ? "Ganti Kop"
                 : "Upload Kop"}
             </label>
@@ -636,7 +633,9 @@ const Organization = () => {
           </div>
 
           <p className="mt-3 text-[11px] leading-5 text-neutral-400">
-            PNG/JPG · maksimal 5 MB · wajib 1900 × 200 px
+            PNG/JPG · maksimal 5 MB · sistem otomatis menyesuaikan ke{" "}
+            {LETTERHEAD_WIDTH} ×{" "}
+            {LETTERHEAD_HEIGHT} px
           </p>
         </div>
       );
@@ -653,231 +652,291 @@ const Organization = () => {
   }
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="Organisasi"
-        description="Kelola identitas dan kop surat Relawan Jurnal Indonesia yang digunakan pada dokumen."
-      />
+    <>
+      <PageContainer>
+        <PageHeader
+          title="Organisasi"
+          description="Kelola identitas dan kop surat Relawan Jurnal Indonesia yang digunakan pada dokumen."
+        />
 
-      {error && (
-        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
-          <XCircle
-            size={18}
-            className="mt-0.5 shrink-0"
-          />
+        {error && (
+          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+            <XCircle
+              size={18}
+              className="mt-0.5 shrink-0"
+            />
 
-          <span>
-            {error}
-          </span>
-        </div>
-      )}
+            <span>
+              {error}
+            </span>
+          </div>
+        )}
 
-      {success && (
-        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-700">
-          <CheckCircle2
-            size={18}
-            className="mt-0.5 shrink-0"
-          />
+        {success && !successModalOpen && (
+          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-700">
+            <CheckCircle2
+              size={18}
+              className="mt-0.5 shrink-0"
+            />
 
-          <span>
-            {success}
-          </span>
-        </div>
-      )}
+            <span>
+              {success}
+            </span>
+          </div>
+        )}
 
-      <div className="space-y-6">
-        <Card
-          title="Identitas Organisasi"
-          description="Informasi organisasi yang digunakan pada sistem persuratan."
-        >
-          <form
-            onSubmit={
-              handleSubmit
-            }
-            className="space-y-6"
+        <div className="space-y-6">
+          <Card
+            title="Identitas Organisasi"
+            description="Informasi organisasi yang digunakan pada sistem persuratan."
           >
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Input
-                label="Nama Organisasi"
-                name="organization_name"
-                value={
-                  form.organization_name
-                }
-                onChange={
-                  handleChange
-                }
-                required
-              />
-
-              <Input
-                label="Nama Singkat"
-                name="organization_short_name"
-                value={
-                  form.organization_short_name
-                }
-                onChange={
-                  handleChange
-                }
-                placeholder="RJI"
-              />
-
-              <div className="sm:col-span-2">
-                <Textarea
-                  label="Alamat"
-                  name="address"
+            <form
+              onSubmit={
+                handleSubmit
+              }
+              className="space-y-6"
+            >
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Input
+                  label="Nama Organisasi"
+                  name="organization_name"
                   value={
-                    form.address
+                    form.organization_name
                   }
                   onChange={
                     handleChange
                   }
-                  rows={4}
+                  required
                 />
+
+                <Input
+                  label="Nama Singkat"
+                  name="organization_short_name"
+                  value={
+                    form.organization_short_name
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  placeholder="RJI"
+                />
+
+                <div className="sm:col-span-2">
+                  <Textarea
+                    label="Alamat"
+                    name="address"
+                    value={
+                      form.address
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    rows={4}
+                  />
+                </div>
+
+                <Input
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={
+                    form.email
+                  }
+                  onChange={
+                    handleChange
+                  }
+                />
+
+                <Input
+                  label="Telepon"
+                  name="phone"
+                  value={
+                    form.phone
+                  }
+                  onChange={
+                    handleChange
+                  }
+                />
+
+                <div className="sm:col-span-2">
+                  <Input
+                    label="Website"
+                    name="website"
+                    value={
+                      form.website
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    placeholder="https://..."
+                  />
+                </div>
               </div>
 
-              <Input
-                label="Email"
-                name="email"
-                type="email"
-                value={
-                  form.email
-                }
-                onChange={
-                  handleChange
-                }
-              />
-
-              <Input
-                label="Telepon"
-                name="phone"
-                value={
-                  form.phone
-                }
-                onChange={
-                  handleChange
-                }
-              />
-
-              <div className="sm:col-span-2">
-                <Input
-                  label="Website"
-                  name="website"
-                  value={
-                    form.website
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  icon={Save}
+                  loading={
+                    saving
                   }
-                  onChange={
-                    handleChange
-                  }
-                  placeholder="https://..."
+                >
+                  Simpan Perubahan
+                </Button>
+              </div>
+            </form>
+          </Card>
+
+          <Card
+            title="Kop Surat"
+            description="Kop digunakan otomatis pada Surat Undangan dan Surat Tugas yang baru diterbitkan."
+          >
+            <div className="mb-5 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4">
+              <div className="flex items-start gap-3">
+                <Building2
+                  size={18}
+                  className="mt-0.5 shrink-0 text-rji-orange"
                 />
+
+                <div>
+                  <p className="text-sm font-semibold text-orange-800">
+                    Kop surat otomatis
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-orange-700">
+                    Gambar akan otomatis disesuaikan menjadi{" "}
+                    <strong>
+                      1900 × 200 px
+                    </strong>{" "}
+                    sebelum dikirim ke server.
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="grid gap-5 xl:grid-cols-2">
+              {renderLetterheadCard({
+                title:
+                  "Kop Surat Atas",
+
+                description:
+                  "Bagian kepala surat yang muncul di bagian atas halaman.",
+
+                savedPath:
+                  savedTopPath,
+
+                selectedFile:
+                  letterheadTop,
+
+                preview:
+                  topPreview,
+
+                originalSize:
+                  topOriginalSize,
+
+                inputId:
+                  "letterhead-top-input",
+
+                onChange:
+                  (event) =>
+                    handleLetterheadChange(
+                      event,
+                      "top"
+                    ),
+              })}
+
+              {renderLetterheadCard({
+                title:
+                  "Kop Surat Bawah",
+
+                description:
+                  "Bagian identitas kontak yang muncul di bagian bawah surat.",
+
+                savedPath:
+                  savedBottomPath,
+
+                selectedFile:
+                  letterheadBottom,
+
+                preview:
+                  bottomPreview,
+
+                originalSize:
+                  bottomOriginalSize,
+
+                inputId:
+                  "letterhead-bottom-input",
+
+                onChange:
+                  (event) =>
+                    handleLetterheadChange(
+                      event,
+                      "bottom"
+                    ),
+              })}
+            </div>
+
+            <div className="mt-5 flex justify-end">
               <Button
-                type="submit"
+                type="button"
                 icon={Save}
-                loading={saving}
+                loading={
+                  uploadingLetterhead
+                }
+                disabled={
+                  !letterheadTop &&
+                  !letterheadBottom
+                }
+                onClick={
+                  handleUploadLetterheads
+                }
               >
-                Simpan Perubahan
+                Simpan Kop Surat
               </Button>
             </div>
-          </form>
-        </Card>
+          </Card>
+        </div>
+      </PageContainer>
 
-        <Card
-          title="Kop Surat"
-          description="Kop ini akan digunakan otomatis pada Surat Undangan dan Surat Tugas yang baru diterbitkan."
-        >
-          <div className="mb-5 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4">
-            <div className="flex items-start gap-3">
-              <Building2
-                size={18}
-                className="mt-0.5 shrink-0 text-rji-orange"
-              />
-
-              <div>
-                <p className="text-sm font-semibold text-orange-800">
-                  Ukuran standar kop
-                </p>
-
-                <p className="mt-1 text-xs leading-5 text-orange-700">
-                  Kedua gambar harus berukuran tepat
-                  <strong>
-                    {" "}
-                    1900 × 200 px
-                  </strong>
-                  . Setelah memilih file, preview akan langsung muncul sebelum disimpan.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-5 xl:grid-cols-2">
-            {renderLetterheadCard({
-              title: "Kop Surat Atas",
-              description:
-                "Bagian kepala surat yang muncul di bagian atas halaman.",
-              savedPath:
-                savedTopPath,
-              selectedFile:
-                letterheadTop,
-              preview:
-                topPreview,
-              inputId:
-                "letterhead-top-input",
-              onChange: (
-                event
-              ) =>
-                handleLetterheadChange(
-                  event,
-                  "top"
-                ),
-            })}
-
-            {renderLetterheadCard({
-              title: "Kop Surat Bawah",
-              description:
-                "Bagian identitas kontak yang muncul di bagian bawah surat.",
-              savedPath:
-                savedBottomPath,
-              selectedFile:
-                letterheadBottom,
-              preview:
-                bottomPreview,
-              inputId:
-                "letterhead-bottom-input",
-              onChange: (
-                event
-              ) =>
-                handleLetterheadChange(
-                  event,
-                  "bottom"
-                ),
-            })}
-          </div>
-
-          <div className="mt-5 flex justify-end">
+      <Modal
+        open={
+          successModalOpen
+        }
+        onClose={() =>
+          setSuccessModalOpen(
+            false
+          )
+        }
+        title="Kop Surat Berhasil Disimpan"
+        description="Kop surat berhasil diperbarui dan akan digunakan pada surat baru."
+        size="sm"
+        footer={
+          <div className="flex justify-end">
             <Button
-              type="button"
-              icon={Save}
-              loading={
-                uploadingLetterhead
-              }
-              disabled={
-                !letterheadTop &&
-                !letterheadBottom
-              }
-              onClick={
-                handleUploadLetterheads
+              onClick={() =>
+                setSuccessModalOpen(
+                  false
+                )
               }
             >
-              Simpan Kop Surat
+              Selesai
             </Button>
           </div>
-        </Card>
-      </div>
-    </PageContainer>
+        }
+      >
+        <div className="py-3">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-50 text-green-600">
+            <CheckCircle2
+              size={28}
+            />
+          </div>
+
+          <p className="mt-4 text-center text-sm leading-6 text-neutral-600">
+            Kop surat atas dan/atau bawah yang kamu simpan sudah berhasil diperbarui.
+          </p>
+        </div>
+      </Modal>
+    </>
   );
 };
 

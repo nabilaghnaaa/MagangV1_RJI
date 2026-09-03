@@ -24,7 +24,13 @@ const uploadLetterheads = async (
 ) => {
   const response = await api.post(
     "/organization/letterheads",
-    formData
+    formData,
+    {
+      headers: {
+        "Content-Type":
+          "multipart/form-data",
+      },
+    }
   );
 
   return response.data;

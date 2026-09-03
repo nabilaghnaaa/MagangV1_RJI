@@ -1,4 +1,5 @@
-const suratService = require("./suratService");
+const suratService =
+  require("./suratService");
 
 const {
   SuratInvitation,
@@ -10,18 +11,26 @@ const ALLOWED_UPDATE_FIELDS = [
   "participant_email",
   "participant_phone",
   "organization",
+  "recipient_name",
+  "recipient_position",
+  "recipient_organization",
   "activity_name",
   "activity_description",
   "activity_date",
   "activity_end_date",
   "activity_time",
   "location",
+  "activity_address",
   "invitation_subject",
+  "letter_number",
+  "letter_date",
   "notes",
   "admin_notes",
 ];
 
-const create = async (data = {}) => {
+const create = async (
+  data = {}
+) => {
   const requiredFields = [
     "participant_name",
     "participant_email",
@@ -31,96 +40,138 @@ const create = async (data = {}) => {
   ];
 
   for (const field of requiredFields) {
-    if (!data[field]) {
-      throw new Error(`${field} wajib diisi.`);
+    if (
+      data[field] === undefined ||
+      data[field] === null ||
+      !String(data[field]).trim()
+    ) {
+      throw new Error(
+        `${field} wajib diisi.`
+      );
     }
   }
 
-  const invitation = await SuratInvitation.create({
-    participant_name: data.participant_name,
-    participant_email: data.participant_email,
-    participant_phone:
-      data.participant_phone || null,
+  const invitation =
+    await SuratInvitation.create({
+      participant_name:
+        data.participant_name,
 
-    organization:
-      data.organization || null,
+      participant_email:
+        data.participant_email,
 
-    activity_name:
-      data.activity_name,
+      participant_phone:
+        data.participant_phone ||
+        null,
 
-    activity_description:
-      data.activity_description || null,
+      organization:
+        data.organization ||
+        null,
 
-    activity_date:
-      data.activity_date,
+      recipient_name:
+        data.recipient_name ||
+        null,
 
-    activity_end_date:
-      data.activity_end_date || null,
+      recipient_position:
+        data.recipient_position ||
+        null,
 
-    activity_time:
-      data.activity_time || null,
+      recipient_organization:
+        data.recipient_organization ||
+        null,
 
-    location:
-      data.location,
+      activity_name:
+        data.activity_name,
 
-    invitation_subject:
-      data.invitation_subject || null,
+      activity_description:
+        data.activity_description ||
+        null,
 
-    notes:
-      data.notes || null,
+      activity_date:
+        data.activity_date,
 
-    status: "pending",
-  });
+      activity_end_date:
+        data.activity_end_date ||
+        null,
+
+      activity_time:
+        data.activity_time ||
+        null,
+
+      location:
+        data.location,
+
+      activity_address:
+        data.activity_address ||
+        null,
+
+      invitation_subject:
+        data.activity_name,
+
+      letter_number: null,
+
+      letter_date: null,
+
+      notes:
+        data.notes ||
+        null,
+
+      status: "pending",
+    });
 
   return invitation;
 };
 
-const getAll = async (query = {}) => {
+const getAll = async (
+  query = {}
+) => {
   const where = {};
 
   if (query.status) {
-    where.status = query.status;
+    where.status =
+      query.status;
   }
 
-  const invitations =
-    await SuratInvitation.findAll({
-      where,
+  return SuratInvitation.findAll({
+    where,
 
-      include: [
-        {
-          model: User,
-          as: "reviewer",
-          attributes: [
-            "id",
-            "name",
-            "email",
-          ],
-        },
-      ],
+    include: [
+      {
+        model: User,
+        as: "reviewer",
+        attributes: [
+          "id",
+          "name",
+          "email",
+        ],
+      },
+    ],
 
-      order: [
-        ["created_at", "DESC"],
-      ],
-    });
-
-  return invitations;
+    order: [
+      ["created_at", "DESC"],
+    ],
+  });
 };
 
-const getById = async (id) => {
+const getById = async (
+  id
+) => {
   const invitation =
-    await SuratInvitation.findByPk(id, {
-      include: [
-        {
-          model: User,
-          as: "reviewer",
-          attributes: [
-            "id",
-            "name",
-            "email",
-          ],
-        },
-      ],
-    });
+    await SuratInvitation.findByPk(
+      id,
+      {
+        include: [
+          {
+            model: User,
+            as: "reviewer",
+            attributes: [
+              "id",
+              "name",
+              "email",
+            ],
+          },
+        ],
+      }
+    );
 
   if (!invitation) {
     throw new Error(
@@ -136,7 +187,9 @@ const update = async (
   data = {}
 ) => {
   const invitation =
-    await SuratInvitation.findByPk(id);
+    await SuratInvitation.findByPk(
+      id
+    );
 
   if (!invitation) {
     throw new Error(
@@ -145,7 +198,10 @@ const update = async (
   }
 
   if (
-    ["approved", "rejected"].includes(
+    [
+      "approved",
+      "rejected",
+    ].includes(
       invitation.status
     )
   ) {
@@ -163,11 +219,23 @@ const update = async (
         field
       )
     ) {
-      updateData[field] = data[field];
+      updateData[field] =
+        data[field];
     }
   }
 
-  await invitation.update(updateData);
+  if (
+    updateData.activity_name !==
+      undefined &&
+    !updateData.invitation_subject
+  ) {
+    updateData.invitation_subject =
+      updateData.activity_name;
+  }
+
+  await invitation.update(
+    updateData
+  );
 
   return getById(id);
 };
@@ -178,7 +246,9 @@ const review = async (
   data = {}
 ) => {
   const invitation =
-    await SuratInvitation.findByPk(id);
+    await SuratInvitation.findByPk(
+      id
+    );
 
   if (!invitation) {
     throw new Error(
@@ -187,7 +257,10 @@ const review = async (
   }
 
   if (
-    !["pending", "review"].includes(
+    ![
+      "pending",
+      "review",
+    ].includes(
       invitation.status
     )
   ) {
@@ -199,7 +272,8 @@ const review = async (
   const updateData = {
     status: "review",
     reviewed_by: adminId,
-    reviewed_at: new Date(),
+    reviewed_at:
+      new Date(),
   };
 
   for (const field of ALLOWED_UPDATE_FIELDS) {
@@ -209,25 +283,17 @@ const review = async (
         field
       )
     ) {
-      updateData[field] = data[field];
+      updateData[field] =
+        data[field];
     }
   }
 
-  await invitation.update(updateData);
+  await invitation.update(
+    updateData
+  );
 
   return getById(id);
 };
-
-/*
-|--------------------------------------------------------------------------
-| APPROVE
-|--------------------------------------------------------------------------
-| Approve sekarang sekaligus:
-| 1. Mengubah pengajuan menjadi approved
-| 2. Membuat surat final
-| 3. Membuat verification token
-|--------------------------------------------------------------------------
-*/
 
 const approve = async (
   id,
@@ -245,7 +311,9 @@ const reject = async (
   data = {}
 ) => {
   const invitation =
-    await SuratInvitation.findByPk(id);
+    await SuratInvitation.findByPk(
+      id
+    );
 
   if (!invitation) {
     throw new Error(
@@ -254,7 +322,10 @@ const reject = async (
   }
 
   if (
-    !["pending", "review"].includes(
+    ![
+      "pending",
+      "review",
+    ].includes(
       invitation.status
     )
   ) {
@@ -277,9 +348,11 @@ const reject = async (
 
     reviewed_by: adminId,
 
-    reviewed_at: new Date(),
+    reviewed_at:
+      new Date(),
 
-    rejected_at: new Date(),
+    rejected_at:
+      new Date(),
 
     rejection_reason:
       data.rejection_reason.trim(),

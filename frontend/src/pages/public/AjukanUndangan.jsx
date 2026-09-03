@@ -1,9 +1,7 @@
 import { useState } from "react";
 import {
   ArrowLeft,
-  CalendarDays,
   CheckCircle2,
-  FileText,
   Send,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -22,13 +20,19 @@ const initialForm = {
   participant_email: "",
   participant_phone: "",
   organization: "",
+
+  recipient_name: "",
+  recipient_position: "",
+  recipient_organization: "",
+
   activity_name: "",
   activity_description: "",
   activity_date: "",
   activity_end_date: "",
   activity_time: "",
   location: "",
-  invitation_subject: "",
+  activity_address: "",
+
   notes: "",
 };
 
@@ -50,94 +54,102 @@ const AjukanUndangan = () => {
   const [result, setResult] =
     useState(null);
 
-  const handleChange = (event) => {
+  const handleChange = (
+    event
+  ) => {
     const {
       name,
       value,
     } = event.target;
 
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
+    setForm(
+      (previous) => ({
+        ...previous,
+        [name]: value,
+      })
+    );
 
     setError("");
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit =
+    async (event) => {
+      event.preventDefault();
 
-    if (!turnstileToken) {
-      setError(
-        "Silakan selesaikan verifikasi keamanan terlebih dahulu."
-      );
-
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-    setResult(null);
-
-    try {
-      const payload = {
-        ...form,
-        turnstile_token:
-          turnstileToken,
-      };
-
-      const response =
-        await invitationService.create(
-          payload
+      if (!turnstileToken) {
+        setError(
+          "Silakan selesaikan verifikasi keamanan terlebih dahulu."
         );
 
-      setResult(
-        response.data
-      );
+        return;
+      }
 
-      setForm(initialForm);
-      setTurnstileToken("");
+      setLoading(true);
+      setError("");
+      setResult(null);
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    } catch (requestError) {
-      console.error(requestError);
+      try {
+        const response =
+          await invitationService.create(
+            {
+              ...form,
 
-      setError(
-        requestError.response?.data?.message ||
-          "Gagal mengirim pengajuan surat undangan."
-      );
+              turnstile_token:
+                turnstileToken,
+            }
+          );
 
-      setTurnstileToken("");
-    } finally {
-      setLoading(false);
-    }
-  };
+        setResult(
+          response.data
+        );
+
+        setForm(
+          initialForm
+        );
+
+        setTurnstileToken("");
+
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+      } catch (
+        requestError
+      ) {
+        console.error(
+          requestError
+        );
+
+        setError(
+          requestError.response
+            ?.data?.message ||
+            "Gagal mengirim pengajuan surat undangan."
+        );
+
+        setTurnstileToken("");
+      } finally {
+        setLoading(false);
+      }
+    };
 
   if (result) {
     return (
       <div className="min-h-screen bg-neutral-50">
         <header className="border-b border-neutral-200 bg-white">
           <div className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5 sm:px-8">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rji-orange">
-                <span className="text-lg font-black text-white">
-                  R
-                </span>
-              </div>
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/ajukan")
+              }
+              className="inline-flex items-center gap-2 text-sm font-medium text-neutral-500 transition hover:text-rji-black"
+            >
+              <ArrowLeft
+                size={17}
+              />
 
-              <div>
-                <p className="text-sm font-bold text-rji-black">
-                  Relawan Jurnal
-                </p>
-
-                <p className="text-xs text-neutral-500">
-                  Indonesia
-                </p>
-              </div>
-            </div>
+              Kembali
+            </button>
 
             <button
               type="button"
@@ -151,10 +163,12 @@ const AjukanUndangan = () => {
           </div>
         </header>
 
-        <main className="flex min-h-[calc(100vh-144px)] items-center justify-center px-5 py-12 sm:px-8">
+        <main className="flex min-h-[calc(100vh-80px)] items-center justify-center px-5 py-12">
           <div className="w-full max-w-xl rounded-3xl border border-neutral-200 bg-white p-8 text-center shadow-xl shadow-neutral-200/40 sm:p-10">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-green-600">
-              <CheckCircle2 size={32} />
+              <CheckCircle2
+                size={32}
+              />
             </div>
 
             <h1 className="mt-6 text-2xl font-bold text-rji-black">
@@ -162,8 +176,7 @@ const AjukanUndangan = () => {
             </h1>
 
             <p className="mt-3 text-sm leading-6 text-neutral-500">
-              Pengajuan Surat Undangan kamu sudah masuk
-              ke sistem dan akan diperiksa oleh Admin.
+              Pengajuan Surat Undangan kamu sudah masuk ke sistem dan akan diperiksa oleh Admin.
             </p>
 
             <div className="mt-7 rounded-2xl bg-neutral-50 p-5 text-left">
@@ -191,7 +204,9 @@ const AjukanUndangan = () => {
                 variant="outline"
                 className="w-full"
                 onClick={() =>
-                  navigate("/ajukan")
+                  navigate(
+                    "/ajukan"
+                  )
                 }
               >
                 Kembali
@@ -200,7 +215,9 @@ const AjukanUndangan = () => {
               <Button
                 className="w-full"
                 onClick={() =>
-                  navigate("/ajukan/undangan")
+                  navigate(
+                    "/ajukan/undangan"
+                  )
                 }
               >
                 Ajukan Lagi
@@ -223,7 +240,10 @@ const AjukanUndangan = () => {
             }
             className="inline-flex items-center gap-2 text-sm font-medium text-neutral-500 transition hover:text-rji-black"
           >
-            <ArrowLeft size={17} />
+            <ArrowLeft
+              size={17}
+            />
+
             Kembali
           </button>
 
@@ -240,18 +260,13 @@ const AjukanUndangan = () => {
       </header>
 
       <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8 lg:py-14">
-        <div className="max-w-2xl">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-rji-orange">
-            <FileText size={22} />
-          </div>
-
-          <h1 className="mt-5 text-3xl font-bold tracking-tight text-rji-black">
+        <div className="max-w-3xl">
+          <h1 className="text-3xl font-bold tracking-tight text-rji-black">
             Pengajuan Surat Undangan
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-neutral-500">
-            Lengkapi data peserta dan kegiatan dengan
-            benar sebelum mengirim pengajuan.
+            Lengkapi data peserta, penerima surat, dan kegiatan. Data akan diperiksa dan dapat disesuaikan oleh Admin sebelum surat diterbitkan.
           </p>
         </div>
 
@@ -262,12 +277,14 @@ const AjukanUndangan = () => {
         )}
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={
+            handleSubmit
+          }
           className="mt-8 space-y-6"
         >
           <FormSection
             title="Data Peserta"
-            description="Informasi pihak yang akan menerima surat undangan."
+            description="Informasi pihak yang akan mengikuti kegiatan."
           >
             <div className="grid gap-5 sm:grid-cols-2">
               <Input
@@ -276,8 +293,10 @@ const AjukanUndangan = () => {
                 value={
                   form.participant_name
                 }
-                onChange={handleChange}
-                placeholder="Nama lengkap"
+                onChange={
+                  handleChange
+                }
+                placeholder="Nama lengkap peserta"
                 required
               />
 
@@ -288,7 +307,9 @@ const AjukanUndangan = () => {
                 value={
                   form.participant_email
                 }
-                onChange={handleChange}
+                onChange={
+                  handleChange
+                }
                 placeholder="nama@email.com"
                 required
               />
@@ -299,7 +320,9 @@ const AjukanUndangan = () => {
                 value={
                   form.participant_phone
                 }
-                onChange={handleChange}
+                onChange={
+                  handleChange
+                }
                 placeholder="08xxxxxxxxxx"
               />
 
@@ -309,15 +332,64 @@ const AjukanUndangan = () => {
                 value={
                   form.organization
                 }
-                onChange={handleChange}
-                placeholder="Nama universitas / organisasi"
+                onChange={
+                  handleChange
+                }
+                placeholder="Universitas / organisasi"
+              />
+            </div>
+          </FormSection>
+
+          <FormSection
+            title="Penerima Surat"
+            description="Data yang akan ditampilkan pada bagian Kepada Yth. di surat."
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Input
+                  label="Nama Penerima"
+                  name="recipient_name"
+                  value={
+                    form.recipient_name
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  placeholder="Contoh: Dr. Budi Santoso"
+                  required
+                />
+              </div>
+
+              <Input
+                label="Jabatan Penerima"
+                name="recipient_position"
+                value={
+                  form.recipient_position
+                }
+                onChange={
+                  handleChange
+                }
+                placeholder="Contoh: Ketua Jurusan Ekonomi"
+                required
+              />
+
+              <Input
+                label="Instansi Penerima"
+                name="recipient_organization"
+                value={
+                  form.recipient_organization
+                }
+                onChange={
+                  handleChange
+                }
+                placeholder="Contoh: UIN Sunan Gunung Djati Bandung"
               />
             </div>
           </FormSection>
 
           <FormSection
             title="Detail Kegiatan"
-            description="Informasi kegiatan yang menjadi tujuan surat undangan."
+            description="Informasi yang akan digunakan dalam isi surat."
           >
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -327,7 +399,9 @@ const AjukanUndangan = () => {
                   value={
                     form.activity_name
                   }
-                  onChange={handleChange}
+                  onChange={
+                    handleChange
+                  }
                   placeholder="Nama kegiatan"
                   required
                 />
@@ -335,14 +409,17 @@ const AjukanUndangan = () => {
 
               <div className="sm:col-span-2">
                 <Textarea
-                  label="Deskripsi Kegiatan"
+                  label="Deskripsi / Tujuan Kegiatan"
                   name="activity_description"
                   value={
                     form.activity_description
                   }
-                  onChange={handleChange}
-                  placeholder="Jelaskan kegiatan secara singkat"
+                  onChange={
+                    handleChange
+                  }
+                  placeholder="Jelaskan tujuan kegiatan secara singkat"
                   rows={5}
+                  required
                 />
               </div>
 
@@ -353,7 +430,9 @@ const AjukanUndangan = () => {
                 value={
                   form.activity_date
                 }
-                onChange={handleChange}
+                onChange={
+                  handleChange
+                }
                 required
               />
 
@@ -364,39 +443,50 @@ const AjukanUndangan = () => {
                 value={
                   form.activity_end_date
                 }
-                onChange={handleChange}
+                onChange={
+                  handleChange
+                }
               />
 
               <Input
-                label="Waktu"
+                label="Pukul"
                 name="activity_time"
                 value={
                   form.activity_time
                 }
-                onChange={handleChange}
-                placeholder="08:00 - 12:00"
+                onChange={
+                  handleChange
+                }
+                placeholder="09.00 - 12.00 WIB"
+                required
               />
 
               <Input
-                label="Lokasi"
+                label="Tempat"
                 name="location"
                 value={
                   form.location
                 }
-                onChange={handleChange}
-                placeholder="Lokasi kegiatan"
+                onChange={
+                  handleChange
+                }
+                placeholder="Nama tempat kegiatan"
                 required
               />
 
               <div className="sm:col-span-2">
-                <Input
-                  label="Perihal Undangan"
-                  name="invitation_subject"
+                <Textarea
+                  label="Alamat Kegiatan"
+                  name="activity_address"
                   value={
-                    form.invitation_subject
+                    form.activity_address
                   }
-                  onChange={handleChange}
-                  placeholder="Perihal surat"
+                  onChange={
+                    handleChange
+                  }
+                  placeholder="Alamat lengkap lokasi kegiatan"
+                  rows={3}
+                  required
                 />
               </div>
             </div>
@@ -404,13 +494,17 @@ const AjukanUndangan = () => {
 
           <FormSection
             title="Catatan"
-            description="Tambahkan informasi tambahan yang perlu diketahui Admin."
+            description="Informasi tambahan untuk Admin."
           >
             <Textarea
               label="Catatan Pengajuan"
               name="notes"
-              value={form.notes}
-              onChange={handleChange}
+              value={
+                form.notes
+              }
+              onChange={
+                handleChange
+              }
               placeholder="Catatan tambahan"
               rows={4}
             />
@@ -418,14 +512,22 @@ const AjukanUndangan = () => {
 
           <TurnstileWidget
             onVerify={(token) => {
-              setTurnstileToken(token);
+              setTurnstileToken(
+                token
+              );
+
               setError("");
             }}
             onExpire={() => {
-              setTurnstileToken("");
+              setTurnstileToken(
+                ""
+              );
             }}
             onError={() => {
-              setTurnstileToken("");
+              setTurnstileToken(
+                ""
+              );
+
               setError(
                 "Verifikasi keamanan gagal. Silakan coba lagi."
               );
@@ -437,7 +539,9 @@ const AjukanUndangan = () => {
               type="button"
               variant="ghost"
               onClick={() =>
-                navigate("/ajukan")
+                navigate(
+                  "/ajukan"
+                )
               }
               disabled={loading}
             >
@@ -448,7 +552,9 @@ const AjukanUndangan = () => {
               type="submit"
               icon={Send}
               loading={loading}
-              disabled={!turnstileToken}
+              disabled={
+                !turnstileToken
+              }
             >
               Kirim Pengajuan
             </Button>
